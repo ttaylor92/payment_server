@@ -17,14 +17,14 @@ defmodule PaymentServerWeb.Router do
   scope "/", PaymentServerWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-    end
+    get "/", HomeController, :index
+  end
 
   scope "/user", PaymentServerWeb do
     pipe_through :browser
 
-    get "/", UserController, :index
-    get "/search/:id", UserController, :search
+    resources "/", UserController
+    # get "/search/:id", UserController, :search
   end
 
   # Other scopes may use custom stacks.

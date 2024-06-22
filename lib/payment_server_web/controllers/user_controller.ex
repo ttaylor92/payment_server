@@ -5,7 +5,7 @@ defmodule PaymentServerWeb.UserController do
     render(conn, :index)
   end
 
-  def search conn, %{"id" => id} do
-    render(conn, :search, id: id)
+  def show(conn, %{"id" => id}) do
+    render(conn, :show, id: id)
   end
 end
