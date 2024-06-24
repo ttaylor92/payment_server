@@ -10,11 +10,15 @@ defmodule PaymentServer.Currency do
     timestamps(type: :utc_datetime)
   end
 
+  @available_params [:type, :amount, :user_id]
+  @required_params [:type, :amount, :user_id]
+
   @doc false
-  def changeset(currency, attrs) do
+  def changeset(currency = %PaymentServer.Currency{}, attrs) do
     currency
-    |> cast(attrs, [:type, :amount])
-    |> validate_required([:type, :amount])
-    |> unique_constraint([:user_id, :type])
+    |> cast(attrs, @available_params)
+    |> validate_required(@required_params)
+    |> unique_constraint([:user, :type])
+    |> validate_number(:amount, greater_than: 0)
   end
 end
