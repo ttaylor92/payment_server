@@ -27,10 +27,15 @@ defmodule PaymentServerWeb.Router do
     # get "/search/:id", UserController, :search
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", PaymentServerWeb do
-  #   pipe_through :api
-  # end
+  scope "/api" do
+    pipe_through :api
+
+    forward "/graphql", Absinthe.Plug, schema: PaymentServer.GraphqlApi.Schema
+
+    if Mix.env() == :dev do
+      forward "/graphiql", Absinthe.Plug.GraphiQL, schema: PaymentServer.GraphqlApi.Schema
+    end
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:payment_server, :dev_routes) do
