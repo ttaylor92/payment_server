@@ -1,6 +1,7 @@
 defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
 
   alias PaymentServer.Accounts
+  alias PaymentServer.AuthToken
 
   def users(_, _, _) do
     {:ok, Accounts.list_users()}
@@ -8,5 +9,17 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
 
   def create_user(_,%{input: input},_) do
     Accounts.create_user(input)
+  end
+
+  def sign_in(_,%{input: input},_) do
+    case input do
+      %{email: email, password: password} -> case Accounts.authenticate(email, password) do
+          {:ok, %Accounts.User{} = user} -> {:ok, %{token: AuthToken.create(user), user: %{email: user.email}}}
+
+          # details: GraphQL.Errors.extract(changeset)
+          {:error, _changeset} -> {:error, message: "Signin failed!"}
+        end
+      _ -> {:error, message: "Signin failed!"}
+    end
   end
 end
