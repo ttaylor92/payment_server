@@ -70,8 +70,8 @@ defmodule PaymentServer.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_user(%User{} = user, attrs) do
-    user
+  def update_user(attrs) do
+    %User{}
     |> User.changeset(attrs)
     |> Repo.update()
   end
@@ -101,8 +101,9 @@ defmodule PaymentServer.Accounts do
       %Ecto.Changeset{data: %User{}}
 
   """
-  def change_user(%User{} = user, attrs \\ %{}) do
-    User.changeset(user, attrs)
+  def change_user(attrs \\ %{}) do
+    %User{}
+    |> User.changeset(attrs)
   end
 
   @doc """

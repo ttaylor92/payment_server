@@ -12,6 +12,7 @@ defmodule PaymentServerWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug PaymentServerWeb.Plugs.SetCurrentUser
   end
 
   scope "/", PaymentServerWeb do

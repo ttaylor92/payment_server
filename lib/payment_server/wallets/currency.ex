@@ -1,24 +1,27 @@
-defmodule PaymentServer.Currency do
+defmodule PaymentServer.Wallets.Currency do
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "currencies" do
     field :type, :string
     field :amount, :integer
-    field :user_id, :id
+    belongs_to :user, PaymentServer.Accounts.User
 
     timestamps(type: :utc_datetime)
   end
 
   @available_params [:type, :amount, :user_id]
-  @required_params [:type, :amount, :user_id]
+  @required_params [:type, :user_id]
+
+  def create_changeset(params) do
+    changeset(%__MODULE__{}, params)
+  end
 
   @doc false
-  def changeset(currency = %PaymentServer.Currency{}, attrs) do
+  def changeset(currency = %PaymentServer.Wallets.Currency{}, attrs) do
     currency
     |> cast(attrs, @available_params)
     |> validate_required(@required_params)
     |> unique_constraint([:user, :type])
-    |> validate_number(:amount, greater_than: 0)
   end
 end

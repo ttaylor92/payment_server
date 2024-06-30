@@ -9,8 +9,8 @@ defmodule PaymentServer.Accounts.User do
     field :password_hash, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :password_confirmation, :string, virtual: true, redact: true
-    has_many :transactions, PaymentServer.TransactionHistory
-    has_many :curriences, PaymentServer.Currency
+    has_many :transactions, PaymentServer.WalletHistory.TransactionHistory
+    has_many :curriences, PaymentServer.Wallets.Currency
 
     timestamps(type: :utc_datetime)
   end
@@ -38,4 +38,8 @@ defmodule PaymentServer.Accounts.User do
   end
 
   defp hash_password(changeset), do: changeset
+
+  def create_changeset(params) do
+    changeset(%__MODULE__{}, params)
+  end
 end

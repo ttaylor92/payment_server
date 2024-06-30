@@ -1,9 +1,9 @@
 defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
 
   alias PaymentServer.Accounts
-  alias PaymentServer.AuthToken
+  alias Utils.AuthToken
 
-  def users(_, _, _) do
+  def users(_, _, %{context: %{current_user: _current_user}}) do
     {:ok, Accounts.list_users()}
   end
 
