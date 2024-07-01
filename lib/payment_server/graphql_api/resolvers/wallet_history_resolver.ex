@@ -3,7 +3,6 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletHistoryResolver do
   alias PaymentServer.WalletHistory
 
   def create_wallet_history(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    IO.inspect(input, label: "Input")
     Map.update(input, :user_id, current_user.id, fn val -> val end)
       |> WalletHistory.create([])
       |> case do
