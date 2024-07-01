@@ -1,4 +1,5 @@
 defmodule PaymentServer.Wallets do
+  import Ecto.Query, warn: false
 
   alias PaymentServer.Repo
   alias PaymentServer.Wallets.Currency
@@ -30,7 +31,7 @@ defmodule PaymentServer.Wallets do
     * {:ok, Currency} - If the currency is updated successfully.
     * {:error, Currency} - If there are errors during update.
   """
-  def update(params) do
+  def update(params \\ %{}) do
     %Currency{}
       |> Currency.changeset(params)
       |> Repo.update()
@@ -60,6 +61,35 @@ defmodule PaymentServer.Wallets do
     * Currency | nil - The retrieved Currency struct or nil if not found.
   """
   def get_by_id(id) do
-    Repo.get(Currency, id) |> Repo.preload(:user)
+    Repo.get(Currency, id) |> Repo.preload([:user, :transaction])
+  end
+
+  @doc """
+  Retrieves all currencies associated with a given user ID from a database.
+
+  Args:
+      id (int): The ID of the user.
+
+  Returns:
+      list: A list of dictionaries representing the retrieved currencies. Each dictionary contains the following keys:
+        user_id (int): The ID of the user associated with the currency.
+        type (str): The type of the currency.
+
+  Example:
+
+  Assuming you have a Currency class defined elsewhere:
+
+  all_currencies = get_all(1)
+  print(all_currencies)
+
+  # Output (example):
+  # [{'user_id': 1, 'type': 'USD'}, {'user_id': 1, 'type': 'GBP'}]
+
+  Notes:
+      This function simulates interacting with a database. It does not perform actual database operations.
+  """
+  def get_all(id) do
+    from(w in Currency, where: w.user_id == ^id)
+      |> Repo.all()
   end
 end

@@ -5,14 +5,15 @@ defmodule PaymentServer.WalletHistory.TransactionHistory do
   schema "transactions" do
     field :amount, :integer
     field :type, :string
-    field :currency_id, :id
+    belongs_to :currency, PaymentServer.Wallets.Currency
     belongs_to :user, PaymentServer.Accounts.User
 
     timestamps(type: :utc_datetime)
   end
 
-  @available_params [:amount, :user_id, :currency_id]
-  @required_params [:amount, :user_id, :currency_id]
+  @available_params [:amount, :user_id, :currency_id, :type]
+  @required_params [:amount, :user_id, :currency_id, :type]
+  @accepted_types ["sent", "received"]
 
   def create_changeset(params) do
     changeset(%__MODULE__{}, params)
@@ -24,5 +25,6 @@ defmodule PaymentServer.WalletHistory.TransactionHistory do
       |> cast(attrs, @available_params)
       |> validate_required(@required_params)
       |> validate_number(:amount, greater_than: 0)
+      |> validate_inclusion(:type, @accepted_types)
   end
 end

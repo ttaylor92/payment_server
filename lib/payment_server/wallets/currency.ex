@@ -4,8 +4,9 @@ defmodule PaymentServer.Wallets.Currency do
 
   schema "currencies" do
     field :type, :string
-    field :amount, :integer
+    field :amount, :decimal
     belongs_to :user, PaymentServer.Accounts.User
+    has_many :transaction, PaymentServer.WalletHistory.TransactionHistory
 
     timestamps(type: :utc_datetime)
   end
@@ -22,6 +23,6 @@ defmodule PaymentServer.Wallets.Currency do
     currency
     |> cast(attrs, @available_params)
     |> validate_required(@required_params)
-    |> unique_constraint([:user, :type])
+    |> unique_constraint(:user_id_type, name: :currencies_user_id_type_index)
   end
 end

@@ -1,4 +1,4 @@
-defmodule PaymentServer.WalletHistory.WalletHistory do
+defmodule PaymentServer.WalletHistory do
 
   import Ecto.Query, warn: false
   alias PaymentServer.Repo
@@ -21,10 +21,10 @@ defmodule PaymentServer.WalletHistory.WalletHistory do
     * {:ok, WalletHistory} - If the wallet history is created successfully.
     * {:error, reason} - If there are errors during creation, including validation errors.
   """
-  def create(params) do
-    %TransactionHistory{}
-      |> TransactionHistory.changeset(params)
-      |> Repo.insert()
+  def create(params \\ %{}, options \\ []) do
+    params
+      |> TransactionHistory.create_changeset()
+      |> Repo.insert(options)
   end
 
   @doc """
@@ -74,6 +74,20 @@ defmodule PaymentServer.WalletHistory.WalletHistory do
     * WalletHistory | nil - The retrieved WalletHistory struct or nil if no record is found with the given ID.
   """
   def get_by_id(id) do
-    Repo.get(WalletHistorySchema, id)
+    Repo.get(TransactionHistory, id) |> Repo.preload([:user, :currency])
+  end
+
+  @doc """
+  Finds all WalletHistory records where the wallet id (currency_id) matches the given id.
+
+  ## Arguments:
+    * id (integer) - The ID of the currency to filter WalletHistory records by.
+
+  ## Returns:
+    * list(WalletHistory) - A list of WalletHistory records matching the currency_id.
+  """
+  def get_by_wallet_id(id) do
+    from(wh in TransactionHistory, where: wh.currency_id == ^id)
+      |> Repo.all()
   end
 end

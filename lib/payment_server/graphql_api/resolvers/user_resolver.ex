@@ -8,18 +8,41 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
   end
 
   def create_user(_,%{input: input},_) do
-    Accounts.create_user(input)
+    case Accounts.create_user(input) do
+      {:ok, account} -> {:ok, account}
+      {:error, changeset} -> {:error, message: "User creation failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
+    end
+  end
+
+  def get_user(_, _, %{context: %{current_user: current_user}}) do
+    {:ok, current_user}
   end
 
   def sign_in(_,%{input: input},_) do
     case input do
       %{email: email, password: password} -> case Accounts.authenticate(email, password) do
           {:ok, %Accounts.User{} = user} -> {:ok, %{token: AuthToken.create(user), user: %{email: user.email}}}
-
-          # details: GraphQL.Errors.extract(changeset)
-          {:error, _changeset} -> {:error, message: "Signin failed!"}
+          {:error, _} -> {:error, message: "Signin failed!"}
         end
       _ -> {:error, message: "Signin failed!"}
+    end
+  end
+
+  def delete_user(_, _, %{context: %{current_user: current_user}}) do
+    case Accounts.delete_user(current_user) do
+      {:ok,} -> {:ok, message: "Account deleted."}
+      {:error, changeset} -> {:error, message: "User deletion failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
+    end
+  end
+
+  def update_user(_, %{input: input}, %{context: %{current_user: current_user}}) do
+    if input.id === current_user.id do
+      case Accounts.update_user(current_user) do
+        {:ok, result} -> {:ok,result}
+        {:error, changeset} -> {:error, message: "User update failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
+      end
+    else
+      {:error, "You do not have permissions to update this user."}
     end
   end
 end

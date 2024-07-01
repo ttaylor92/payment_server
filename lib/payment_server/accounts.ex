@@ -70,7 +70,7 @@ defmodule PaymentServer.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_user(attrs) do
+  def update_user(attrs \\ %{}) do
     %User{}
     |> User.changeset(attrs)
     |> Repo.update()
@@ -90,20 +90,6 @@ defmodule PaymentServer.Accounts do
   """
   def delete_user(%User{} = user) do
     Repo.delete(user)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking user changes.
-
-  ## Examples
-
-      iex> change_user(user)
-      %Ecto.Changeset{data: %User{}}
-
-  """
-  def change_user(attrs \\ %{}) do
-    %User{}
-    |> User.changeset(attrs)
   end
 
   @doc """
