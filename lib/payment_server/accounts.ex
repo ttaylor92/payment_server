@@ -39,7 +39,7 @@ defmodule PaymentServer.Accounts do
 
   """
   def get_user(id) do
-    Repo.get(User, id) |>Repo.preload([:curriences])
+    Repo.get(User, id) |> Repo.preload([:curriences])
   end
 
   @doc """

@@ -32,9 +32,14 @@ defmodule PaymentServer.Wallets do
     * {:error, Currency} - If there are errors during update.
   """
   def update(params \\ %{}) do
-    %Currency{}
+    Currency
+      |> Repo.get(params.id)
       |> Currency.changeset(params)
       |> Repo.update()
+      |> case do
+        {:ok, schema} -> {:ok, Repo.preload(schema, [:user, :transaction])}
+        error -> error
+      end
   end
 
   @doc """

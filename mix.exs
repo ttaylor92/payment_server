@@ -60,7 +60,8 @@ defmodule PaymentServer.MixProject do
       {:bandit, "~> 1.2"},
       {:absinthe, "~> 1.7"},
       {:absinthe_plug, "~> 1.5"},
-      {:argon2_elixir, "~> 4.0"}
+      {:argon2_elixir, "~> 4.0"},
+      {:httpoison, "~> 2.2"}
     ]
   end
 

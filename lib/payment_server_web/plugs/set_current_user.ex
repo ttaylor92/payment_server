@@ -28,6 +28,7 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
     case Utils.AuthToken.verify(token) do
       {:ok, user_id} -> User
         |> Repo.get(user_id)
+        |> Repo.preload([:curriences])
         |> case do
           nil -> {:error, "invalid authorization token"}
           user -> {:ok, user}
