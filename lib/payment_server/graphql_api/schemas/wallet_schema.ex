@@ -19,6 +19,11 @@ defmodule PaymentServer.GraphqlApi.Schemas.WalletSchema do
     field :get_wallets, type: list_of(:wallet_type) do
       resolve(&WalletResolver.get_wallets/3)
     end
+
+    @desc "Get a list of currencies that can be used to create a user's wallet"
+    field :get_currencies, type: list_of(:currency_type) do
+      resolve(&WalletResolver.get_currencies/3)
+    end
   end
 
   object :wallet_mutations do
@@ -39,6 +44,12 @@ defmodule PaymentServer.GraphqlApi.Schemas.WalletSchema do
     field :process_transfer_request, type: :wallet_type do
       arg(:input, non_null(:wallet_transfer_input_type))
       resolve(&WalletResolver.process_transaction/3)
+    end
+
+    @desc "Process a wallet conversion request"
+    field :process_conversion_request, type: :wallet_type do
+      arg(:input, non_null(:wallet_convert_input_type))
+      resolve(&WalletResolver.process_wallet_conversion/3)
     end
 
     @desc "Delete a user wallet"

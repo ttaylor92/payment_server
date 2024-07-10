@@ -31,7 +31,7 @@ defmodule PaymentServer.Wallets do
     * {:ok, Currency} - If the currency is updated successfully.
     * {:error, Currency} - If there are errors during update.
   """
-  def update(params \\ %{}) do
+  def update(params) do
     Currency
       |> Repo.get(params.id)
       |> Currency.changeset(params)

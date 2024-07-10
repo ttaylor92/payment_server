@@ -5,68 +5,57 @@ defmodule PaymentServer.ExternalApiClient do
   A client module for interacting with an external API.
   """
 
-  @api_base_url "https://api.example.com"
+  @api_base_url "http://localhost:4001"
 
   @doc """
-  Fetches a resource by its ID.
+  Fetches a currency by its Currency Code, using USD as the default currency to exchange from.
 
   ## Parameters
 
-    - `resource_id`: The ID of the resource to fetch.
+    - `to_currency_code`: The code for the currency to convert to.
+    - `from_currency_code`: The code for the currency to convert from, default "USD".
 
   ## Examples
 
-      iex> MyApp.ExternalApiClient.get_resource("123")
-      {:ok, %{"id" => "123", "name" => "Resource Name"}}
-
+      iex> MyApp.ExternalApiClient.get_currency("AUD")
+      {:ok, %{
+        time_zone: "UTC",
+        from_currency_code: "USD",
+        to_currency_code: "AUD",
+        from_currency_name: "US Dollar",
+        to_currency_name: "Australian Dollar",
+        exchange_rate: "3.33",
+        last_refreshed: "2024-07-09 22:25:53.732684Z",
+        bid_price: "3.33",
+        ask_price: "3.33"
+      }}
   """
-  def get_resource(resource_id) do
-    url = "#{@api_base_url}/resources/#{resource_id}"
+  def get_currency(to_currency_code, from_currency_code \\ "USD") do
+    url = "#{@api_base_url}/query?function=CURRENCY_EXCHANGE_RATE&from_currency=#{from_currency_code}&to_currency=#{to_currency_code}"
     case get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, Jason.decode!(body)}
+        case Jason.decode(body) do
+          {:ok, parsed} -> {:ok, transform_keys(parsed)}
+          {:error, reason} -> {:error, reason}
+        end
 
-      {:ok, %HTTPoison.Response{status_code: status_code}} when status_code in 400..499 ->
-        {:error, "Client error: #{status_code}"}
-
-      {:ok, %HTTPoison.Response{status_code: status_code}} when status_code in 500..599 ->
-        {:error, "Server error: #{status_code}"}
+      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} when status_code in 400..499 ->
+        {:error, body}
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
     end
   end
 
-  @doc """
-  Creates a new resource with the provided parameters.
-
-  ## Parameters
-
-    - `resource_params`: A map containing the parameters of the resource to create.
-
-  ## Examples
-
-      iex> MyApp.ExternalApiClient.post_resource(%{"name" => "New Resource"})
-      {:ok, %{"id" => "124", "name" => "New Resource"}}
-
-  """
-  def post_resource(resource_params) do
-    url = "#{@api_base_url}/resources"
-    headers = [{"Content-Type", "application/json"}]
-    body = Jason.encode!(resource_params)
-
-    case post(url, body, headers) do
-      {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
-        {:ok, Jason.decode!(body)}
-
-      {:ok, %HTTPoison.Response{status_code: status_code}} when status_code in 400..499 ->
-        {:error, "Client error: #{status_code}"}
-
-      {:ok, %HTTPoison.Response{status_code: status_code}} when status_code in 500..599 ->
-        {:error, "Server error: #{status_code}"}
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, reason}
-    end
+  defp transform_keys(%{"Realtime Currency Exchange Rate" => rate_data}) do
+    rate_data
+      |> Enum.map(fn {key, value} ->
+        new_key = key
+          |> String.replace(~r/^\d+\. /, "")
+          |> String.replace(~r/\s/, "_")
+          |> String.downcase()
+        {String.to_atom(new_key), value}
+      end)
+      |> Enum.into(%{})
   end
 end
