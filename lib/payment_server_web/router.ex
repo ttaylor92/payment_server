@@ -1,31 +1,9 @@
 defmodule PaymentServerWeb.Router do
   use PaymentServerWeb, :router
 
-  pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, html: {PaymentServerWeb.Layouts, :root}
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
-  end
-
   pipeline :api do
     plug :accepts, ["json"]
     plug PaymentServerWeb.Plugs.SetCurrentUser
-  end
-
-  scope "/", PaymentServerWeb do
-    pipe_through :browser
-
-    get "/", HomeController, :index
-  end
-
-  scope "/user", PaymentServerWeb do
-    pipe_through :browser
-
-    resources "/", UserController
-    # get "/search/:id", UserController, :search
   end
 
   scope "/api" do
@@ -34,7 +12,9 @@ defmodule PaymentServerWeb.Router do
     forward "/graphql", Absinthe.Plug, schema: PaymentServer.GraphqlApi.Schema
 
     if Mix.env() == :dev do
-      forward "/graphiql", Absinthe.Plug.GraphiQL, schema: PaymentServer.GraphqlApi.Schema
+      forward "/graphiql", Absinthe.Plug.GraphiQL,
+        schema: PaymentServer.GraphqlApi.Schema,
+        interface: :playground
     end
   end
 
@@ -48,7 +28,7 @@ defmodule PaymentServerWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through :browser
+      pipe_through [:fetch_session, :protect_from_forgery]
 
       live_dashboard "/dashboard", metrics: PaymentServerWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
