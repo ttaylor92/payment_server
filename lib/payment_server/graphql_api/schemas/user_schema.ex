@@ -15,8 +15,9 @@ defmodule PaymentServer.GraphqlApi.Schemas.UserSchema do
       resolve(&Resolvers.UserResolver.users/3)
     end
 
-    @desc "Get a user"
+    @desc "Get a user if an id is given otherwise authenticated user is given"
     field :get_a_user, :user_type do
+      arg(:id, :id)
       resolve(&Resolvers.UserResolver.get_user/3)
     end
   end

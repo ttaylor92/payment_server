@@ -11,7 +11,7 @@ defmodule PaymentServer.GraphqlApi.Schemas.WalletHistorySchema do
 
     @desc "Get wallet history"
     field :get_wallet_history, type: :history_type do
-      arg :id, non_null(:id)
+      arg(:id, non_null(:id))
       resolve &Resolvers.WalletHistoryResolver.get_wallet_history/3
     end
   end

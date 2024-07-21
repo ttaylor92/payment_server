@@ -1,20 +1,7 @@
 defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
-
   alias PaymentServer.Wallets
   alias PaymentServer.Accounts
   alias NimbleCSV.RFC4180, as: CSV
-
-  defp fetch_wallet_for_a_sepecific_user(wallet_id, user_id) do
-    case Wallets.get_by_id(wallet_id) do
-      nil -> {:error, message: "No wallet found."}
-
-      wallet -> if wallet.user.id === user_id do
-        {:ok, wallet}
-      else
-        {:error, message: "No wallet found."}
-      end
-    end
-  end
 
   defp fetch_accepted_currencies() do
     root_dir = Mix.Project.app_path()
@@ -31,12 +18,51 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
         end)
   end
 
+  defp get_user(user_id) do
+    case Accounts.get_user(user_id) do
+      nil -> {:error, :user_not_found}
+      user -> {:ok, user}
+    end
+  end
+
+  defp find_wallet(user, wallet_type) do
+    case Enum.find(user.curriences, fn currency -> wallet_type === currency.type end) do
+      nil -> {:error, :wallet_not_found}
+      wallet -> {:ok, wallet}
+    end
+  end
+
+  defp update_wallet(wallet, amount_change) do
+    updated_wallet = %{wallet | amount: wallet.amount + amount_change}
+    case Wallets.update(updated_wallet) do
+      {:ok, result} -> {:ok, result}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp get_exchange_rate(currency_to, currency_from) do
+    case PaymentServer.ExternalApiClient.get_currency(currency_to, currency_from) do
+      {:ok, result} -> {:ok, String.to_float(result.exchange_rate)}
+      {:error, _} -> {:error, :exchange_rate_not_found}
+    end
+  end
+
+  defp convert_wallet(wallet, exchange_rate, new_currency_type) do
+    new_wallet_amount = wallet.amount * exchange_rate
+    updated_wallet = %{id: wallet.id, amount: new_wallet_amount, type: new_currency_type}
+    {:ok, updated_wallet}
+  end
+
   def create_wallet(_, %{input: input}, %{context: %{current_user: current_user}}) do
     Map.update(input, :user_id, current_user.id, fn val -> val end)
       |> Wallets.create([])
       |> case do
         {:ok, wallet} -> {:ok, wallet}
-        {:error, changeset} -> {:error, message: "Wallet creation failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
+        {:error, changeset} ->
+          {:error,
+            message: "Wallet creation failed!",
+            details: Utils.GraphqlErrorHandler.errors_on(changeset)
+          }
       end
   end
 
@@ -45,8 +71,7 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
   end
 
   def get_wallet(_,%{id: id}, %{context: %{current_user: current_user}}) do
-    String.to_integer(id)
-      |> fetch_wallet_for_a_sepecific_user(current_user.id)
+    find_wallet(current_user, String.to_integer(id))
   end
 
   def get_wallets(_, _, %{context: %{current_user: current_user}}) do
@@ -57,23 +82,21 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
   end
 
   def update_wallet(_,%{input: input}, %{context: %{current_user: current_user}}) do
-    String.to_integer(input.id)
-      |> fetch_wallet_for_a_sepecific_user(current_user.id)
-      |> case do
-        {:error, message} -> {:error, message}
-        {:ok, wallet} -> %{input | id: String.to_integer(input.id)}
-          |> Map.put(:user_id, current_user.id)
-          |> Map.put(:type, wallet.type)
-          |> Wallets.update()
-          |> case do
-            {:ok, result} -> {:ok, result}
-            {:error, changeset} -> {
-              :error,
-              message: "Wallet update failed!",
-              details: Utils.GraphqlErrorHandler.errors_on(changeset)
-            }
-          end
-      end
+    case find_wallet(current_user, String.to_integer(input.id)) do
+      {:error, message} -> {:error, message}
+      {:ok, wallet} -> %{input | id: String.to_integer(input.id)}
+        |> Map.put(:user_id, current_user.id)
+        |> Map.put(:type, wallet.type)
+        |> Wallets.update()
+        |> case do
+          {:ok, result} -> {:ok, result}
+          {:error, changeset} -> {
+            :error,
+            message: "Wallet update failed!",
+            details: Utils.GraphqlErrorHandler.errors_on(changeset)
+          }
+        end
+    end
   end
 
   def delete_wallet(_,%{id: id}, %{context: %{current_user: current_user}}) do
@@ -95,73 +118,50 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     end
   end
 
-  def process_transaction(_,%{input: input}, %{context: %{current_user: current_user}}) do
-    case Accounts.get_user(input.user_id) do
-      nil -> {:error, message: "The user requested does not exist."}
+  def process_transaction(_, %{input: input}, %{context: %{current_user: current_user}}) do
+    with {:ok, recipient} <- get_user(input.user_id),
+        {:ok, recipient_wallet} <- find_wallet(recipient, input.wallet_type),
+        {:ok, sender_wallet} <- find_wallet(current_user, input.wallet_type),
+        {:ok, _sender_result} <- update_wallet(sender_wallet, -input.requested_amount),
+        {:ok, sender_result} <- update_wallet(recipient_wallet, input.requested_amount) do
+      {:ok, sender_result}
+    else
+      {:error, :user_not_found} ->
+        {:error, message: "The user requested does not exist."}
 
-      recipient -> case Enum.find(recipient.curriences, fn currency -> input.wallet_type === currency.type end) do
-        nil -> {:error, message: "Recipient has no wallet with matching currency found."}
+      {:error, :wallet_not_found} ->
+        {:error, message: "Recipient or sender has no wallet with matching currency found."}
 
-        recipient_wallet -> case Enum.find(current_user.curriences, fn cu_currency -> input.wallet_type === cu_currency.type end) do
-          nil -> {:error, message: "Sender has no wallet with matching currency found."}
-
-          sender_wallet ->
-            updated_senders_wallet = %{id: sender_wallet.id, amount: sender_wallet.amount - input.requested_amount}
-
-            case Wallets.update(updated_senders_wallet) do
-              {:ok, _sender_result} ->
-                updated_recipient_wallet = %{id: recipient_wallet.id, amount: recipient_wallet.amount + input.requested_amount}
-                case Wallets.update(updated_recipient_wallet) do
-                  {:ok, sender_result} -> {:ok, sender_result}
-
-                  {:error, changeset} ->
-                    sender_wallet_refund = %{id: sender_wallet.id, amount: sender_wallet.amount - input.requested_amount}
-                    case Wallets.update(sender_wallet_refund) do
-                      {:ok, _} -> {
-                        :error,
-                        message: "We were unable to add the requested amount to the user's Wallet",
-                        details: Utils.GraphqlErrorHandler.errors_on(changeset)
-                      }
-                      {:error, changeset} -> {
-                        :error,
-                        message: "We were unable to add the requested amount to the user's Wallet and unable to refund subtracted amount",
-                        details: Utils.GraphqlErrorHandler.errors_on(changeset)
-                      }
-                    end
-                end
-
-              {:error, changeset} -> {
-                :error,
-                message: "We were unable to add the requested amount to the user's Wallet",
-                details: Utils.GraphqlErrorHandler.errors_on(changeset)
-              }
-            end
-        end
-      end
+      {:error, changeset} ->
+        {:error,
+          message: "Transaction failed.",
+          details: Utils.GraphqlErrorHandler.errors_on(changeset)
+        }
     end
   end
 
-  def process_wallet_conversion(_,%{input: input}, %{context: %{current_user: current_user}}) do
-    case PaymentServer.ExternalApiClient.get_currency(input.currency_to, input.currency_from) do
-      {:ok, result} ->
-        exchange_rate = String.to_float(result.exchange_rate)
-        case Enum.find(current_user.curriences, fn cu_currency -> input.currency_from === cu_currency.type end) do
-          nil -> {:error, message: "Requested wallet to convert does not exist."}
-          wallet_to_convert ->
-            new_wallet_amount = wallet_to_convert.amount * exchange_rate
-            updated_wallet = %{id: wallet_to_convert.id, amount: new_wallet_amount, type: input.currency_to}
+  def process_wallet_conversion(_, %{input: input}, %{context: %{current_user: current_user}}) do
+    with {:ok, exchange_rate} <- get_exchange_rate(input.currency_to, input.currency_from),
+        {:ok, wallet_to_convert} <- find_wallet(current_user, input.currency_from),
+        {:ok, updated_wallet} <- convert_wallet(wallet_to_convert, exchange_rate, input.currency_to),
+        {:ok, data} <- Wallets.update(updated_wallet) do
+      {:ok, data}
+    else
+      {:error, :exchange_rate_not_found} ->
+        {:error, message: "Failed to retrieve exchange rate."}
 
-            case Wallets.update(updated_wallet) do
-              {:ok, data} -> {:ok, data}
-              {:error, changeset} -> {
-                :error,
-                message: "We were unable to convert your #{input.currency_from} wallet to #{input.currency_to}",
-                details: Utils.GraphqlErrorHandler.errors_on(changeset)
-              }
-            end
-        end
-      {:error, result} -> {:error, result}
+      {:error, :wallet_not_found} ->
+        {:error, message: "Requested wallet to convert does not exist."}
+
+      {:error, changeset} ->
+        {:error,
+          message: "We were unable to convert your #{input.currency_from} wallet to #{input.currency_to}",
+          details: Utils.GraphqlErrorHandler.errors_on(changeset)
+        }
     end
   end
 
+  def get_total_worth(_, %{currency: currency}, %{context: %{current_user: current_user}}) do
+    # TODO:
+  end
 end

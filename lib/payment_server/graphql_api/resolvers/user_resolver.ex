@@ -14,8 +14,15 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
     end
   end
 
-  def get_user(_, _, %{context: %{current_user: current_user}}) do
-    {:ok, current_user}
+  def get_user(_, %{id: id}, %{context: %{current_user: current_user}}) do
+    if id !== nil do
+      case Accounts.get_user(id) do
+        nil -> {:error, message: "User not found!"}
+        user -> {:ok, user}
+      end
+    else
+      {:ok, current_user}
+    end
   end
 
   def sign_in(_,%{input: input},_) do

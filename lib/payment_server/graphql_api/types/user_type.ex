@@ -6,6 +6,7 @@ defmodule PaymentServer.GraphqlApi.Types.UserType do
     field :first_name, :string
     field :last_name, :string
     field :email, :string
+    field :curriences, list_of(:wallet_type)
   end
 
   input_object :user_input_type do
