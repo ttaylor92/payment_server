@@ -2,6 +2,7 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
   @behaviour Plug
 
   import Plug.Conn
+  import Absinthe.Plug
 
   alias PaymentServer.Repo
   alias PaymentServer.Accounts.User
@@ -9,18 +10,27 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
   def init(opts), do: opts
 
   def call(conn, _) do
-    context = build_context(conn)
-    Absinthe.Plug.put_options(conn, context: context)
+    case build_context(conn) do
+      {:ok, context} ->
+        put_options(conn, context: context)
+      {:error, reason} ->
+        conn
+          |> put_status(:unauthorized)
+          |> put_resp_content_type("application/json")
+          |> send_resp(401, Jason.encode!(%{errors: [%{message: reason}]}))
+          |> halt()
+    end
   end
 
   @doc """
   Return the current user context based on the authorization header
   """
   def build_context(conn) do
-    with ["Bearer " <> token] <- get_req_header(conn, "authorization"), {:ok, current_user} <- authorize(token) do
-      %{current_user: current_user}
+    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+        {:ok, current_user} <- authorize(token) do
+      {:ok, %{current_user: current_user}}
     else
-      _ -> %{}
+      _ -> {:error, "Unauthorized"}
     end
   end
 
@@ -35,6 +45,5 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
         end
       {:error, _reason} -> {:error, "invalid authorization token"}
     end
-
   end
 end
