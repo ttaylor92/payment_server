@@ -14,6 +14,10 @@ defmodule PaymentServer.GraphqlApi.Types.WalletType do
     field :value, :string
   end
 
+  object :total_worth_result do
+    field :amount, :float
+  end
+
   input_object :wallet_transfer_input_type do
     field :user_id, non_null(:integer)
     field :wallet_type, non_null(:string)

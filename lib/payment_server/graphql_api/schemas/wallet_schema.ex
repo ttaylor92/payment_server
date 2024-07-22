@@ -11,7 +11,7 @@ defmodule PaymentServer.GraphqlApi.Schemas.WalletSchema do
 
     @desc "Get a user's wallet"
     field :get_wallet, type: :wallet_type do
-      arg(:id, non_null(:id))
+      arg(:wallet_type, non_null(:string))
       resolve(&WalletResolver.get_wallet/3)
     end
 
@@ -23,6 +23,12 @@ defmodule PaymentServer.GraphqlApi.Schemas.WalletSchema do
     @desc "Get a list of currencies that can be used to create a user's wallet"
     field :get_currencies, type: list_of(:currency_type) do
       resolve(&WalletResolver.get_currencies/3)
+    end
+
+    @desc "Get user's total worth"
+    field :get_total_worth, type: :total_worth_result do
+      arg(:currency, non_null(:string))
+      resolve(&WalletResolver.get_total_worth/3)
     end
   end
 

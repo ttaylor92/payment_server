@@ -25,6 +25,14 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     end
   end
 
+
+  defp find_wallet(user, id) when is_number(id) do
+    case Enum.find(user.curriences, fn currency -> id === currency.id end) do
+      nil -> {:error, :wallet_not_found}
+      wallet -> {:ok, wallet}
+    end
+  end
+
   defp find_wallet(user, wallet_type) do
     case Enum.find(user.curriences, fn currency -> wallet_type === currency.type end) do
       nil -> {:error, :wallet_not_found}
@@ -70,8 +78,11 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     {:ok, fetch_accepted_currencies()}
   end
 
-  def get_wallet(_,%{id: id}, %{context: %{current_user: current_user}}) do
-    find_wallet(current_user, String.to_integer(id))
+  def get_wallet(_,%{wallet_type: wallet_type}, %{context: %{current_user: current_user}}) do
+    case find_wallet(current_user, wallet_type) do
+      {:error, _} -> {:error, message: "Wallet not found!"}
+      {:ok, wallet} -> {:ok, wallet}
+    end
   end
 
   def get_wallets(_, _, %{context: %{current_user: current_user}}) do
@@ -83,7 +94,7 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
 
   def update_wallet(_,%{input: input}, %{context: %{current_user: current_user}}) do
     case find_wallet(current_user, String.to_integer(input.id)) do
-      {:error, message} -> {:error, message}
+      {:error, _} -> {:error, message: "Wallet not found!"}
       {:ok, wallet} -> %{input | id: String.to_integer(input.id)}
         |> Map.put(:user_id, current_user.id)
         |> Map.put(:type, wallet.type)
@@ -100,20 +111,16 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
   end
 
   def delete_wallet(_,%{id: id}, %{context: %{current_user: current_user}}) do
-    case Wallets.get_by_id(String.to_integer(id)) do
-      nil -> {:error, message: "Wallet was not found."}
+    case find_wallet(current_user, String.to_integer(id)) do
+      {:error, _} -> {:error, message: "Wallet was not found."}
 
-      wallet -> if wallet.user_id === current_user.id do
-        case Wallets.delete(wallet) do
+      {:ok, wallet} -> case Wallets.delete(wallet) do
           {:ok} -> {:ok, message: "Wallet deleted."}
           {:error, changeset} -> {
             :error,
             message: "Wallet update failed!",
             details: Utils.GraphqlErrorHandler.errors_on(changeset)
           }
-          end
-        else
-          {:error, message: "You do not have permissions to update this wallet."}
         end
     end
   end
@@ -161,7 +168,36 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     end
   end
 
+  defp fetch_exchange_and_returned_converted_value(wallet, currency_to) do
+    if wallet.type === currency_to do
+      {:ok, wallet.amount}
+    else
+      case get_exchange_rate(currency_to, wallet.type) do
+        {:ok, _rate} when is_nil(wallet.amount) -> 0
+        {:ok, rate} -> wallet.amount * rate
+        {:error, _} -> {:error, message: "Unable to retreive exhange rate for #{currency_to}"}
+      end
+    end
+  end
+
   def get_total_worth(_, %{currency: currency}, %{context: %{current_user: current_user}}) do
-    # TODO:
+    result = current_user.curriences
+      |> Task.async_stream(
+          &fetch_exchange_and_returned_converted_value(&1, currency),
+          max_concurrency: 10,
+          timeout: 5000
+        )
+      |> Enum.reduce({:ok, 0}, fn
+          {:ok, converted_value}, {:ok, acc} when is_number(converted_value) ->
+            {:ok, acc + converted_value}
+          {:error, _} = error, {:ok, _acc} -> error
+          _other, {:ok, _acc} ->
+            {:error, message: "Unexpected result format!"}
+        end)
+
+    case result do
+      {:ok, value} -> {:ok, %{amount: value}}
+      {:error, message} -> {:error, message}
+    end
   end
 end
