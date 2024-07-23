@@ -6,7 +6,7 @@ defmodule PaymentServer.GraphqlApi.Types.WalletType do
     field :type, :string
     field :amount, :float
     field :user, :user_type
-    field :transaction, list_of(:history_type)
+    # field :transaction, list_of(:history_type)
   end
 
   object :currency_type do
