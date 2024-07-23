@@ -10,16 +10,8 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
   def init(opts), do: opts
 
   def call(conn, _) do
-    case build_context(conn) do
-      {:ok, context} ->
-        put_options(conn, context: context)
-      {:error, reason} ->
-        conn
-          |> put_status(:unauthorized)
-          |> put_resp_content_type("application/json")
-          |> send_resp(401, Jason.encode!(%{errors: [%{message: reason}]}))
-          |> halt()
-    end
+    context = build_context(conn)
+    put_options(conn, context: context)
   end
 
   @doc """
@@ -28,9 +20,9 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
   def build_context(conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
         {:ok, current_user} <- authorize(token) do
-      {:ok, %{current_user: current_user}}
+      %{current_user: current_user}
     else
-      _ -> {:error, "Unauthorized"}
+      _ -> %{}
     end
   end
 

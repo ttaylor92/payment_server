@@ -7,11 +7,19 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
     {:ok, Accounts.list_users()}
   end
 
+  def users(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
+  end
+
   def create_user(_,%{input: input},_) do
     case Accounts.create_user(input) do
       {:ok, account} -> {:ok, account}
       {:error, changeset} -> {:error, message: "User creation failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
     end
+  end
+
+  def create_user(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
   end
 
   def get_user(_, %{id: id}, %{context: %{current_user: current_user}}) do
@@ -23,6 +31,10 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
     else
       {:ok, current_user}
     end
+  end
+
+  def get_user(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
   end
 
   def sign_in(_,%{input: input},_) do
@@ -42,6 +54,10 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
     end
   end
 
+  def delete_user(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
+  end
+
   def update_user(_, %{input: input}, %{context: %{current_user: current_user}}) do
     if input.id === current_user.id do
       case Accounts.update_user(current_user) do
@@ -51,5 +67,9 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
     else
       {:error, "You do not have permissions to update this user."}
     end
+  end
+
+  def update_user(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
   end
 end

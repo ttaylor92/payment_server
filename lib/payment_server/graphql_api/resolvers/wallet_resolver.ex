@@ -74,8 +74,16 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
       end
   end
 
+  def create_wallet(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
+  end
+
   def get_currencies(_, _, %{context: %{current_user: _current_user}}) do
     {:ok, fetch_accepted_currencies()}
+  end
+
+  def get_currencies(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
   end
 
   def get_wallet(_,%{wallet_type: wallet_type}, %{context: %{current_user: current_user}}) do
@@ -85,11 +93,19 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     end
   end
 
+  def get_wallet(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
+  end
+
   def get_wallets(_, _, %{context: %{current_user: current_user}}) do
     case Wallets.get_all(current_user.id) do
       nil -> {:error, message: "No wallet found."}
       wallet_list -> {:ok, wallet_list}
     end
+  end
+
+  def get_wallets(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
   end
 
   def update_wallet(_,%{input: input}, %{context: %{current_user: current_user}}) do
@@ -110,6 +126,10 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     end
   end
 
+  def update_wallet(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
+  end
+
   def delete_wallet(_,%{id: id}, %{context: %{current_user: current_user}}) do
     case find_wallet(current_user, String.to_integer(id)) do
       {:error, _} -> {:error, message: "Wallet was not found."}
@@ -123,6 +143,10 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
           }
         end
     end
+  end
+
+  def delete_wallet(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
   end
 
   def process_transaction(_, %{input: input}, %{context: %{current_user: current_user}}) do
@@ -147,6 +171,10 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     end
   end
 
+  def process_transaction(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
+  end
+
   def process_wallet_conversion(_, %{input: input}, %{context: %{current_user: current_user}}) do
     with {:ok, exchange_rate} <- get_exchange_rate(input.currency_to, input.currency_from),
         {:ok, wallet_to_convert} <- find_wallet(current_user, input.currency_from),
@@ -166,6 +194,10 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
           details: Utils.GraphqlErrorHandler.errors_on(changeset)
         }
     end
+  end
+
+  def process_wallet_conversion(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
   end
 
   defp fetch_exchange_and_returned_converted_value(wallet, currency_to) do
@@ -199,5 +231,9 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
       {:ok, value} -> {:ok, %{amount: value}}
       {:error, message} -> {:error, message}
     end
+  end
+
+  def get_total_worth(_,_,_) do
+    {:error, message: "Unauthenticated!!!"}
   end
 end
