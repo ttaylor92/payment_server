@@ -6,6 +6,7 @@ defmodule PaymentServer.Accounts.User do
     field :first_name, :string
     field :last_name, :string
     field :email, :string
+    field :default_currency, :string
     field :password_hash, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :password_confirmation, :string, virtual: true, redact: true
@@ -15,7 +16,7 @@ defmodule PaymentServer.Accounts.User do
     timestamps(type: :utc_datetime)
   end
 
-  @available_params [:first_name, :last_name, :email, :password, :password_confirmation]
+  @available_params [:first_name, :last_name, :email, :password, :password_confirmation, :default_currency]
   @required_params [:first_name, :last_name, :email, :password, :password_confirmation]
 
   @doc false
