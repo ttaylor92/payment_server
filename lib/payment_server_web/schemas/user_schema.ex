@@ -1,8 +1,8 @@
-defmodule PaymentServer.Schemas.UserSchema do
+defmodule PaymentServerWeb.Schemas.UserSchema do
   use Absinthe.Schema.Notation
 
-  alias PaymentServer.Resolvers
-  alias PaymentServer.Types
+  alias PaymentServerWeb.Resolvers
+  alias PaymentServerWeb.Types
 
   # Types
   import_types(Types.UserType)

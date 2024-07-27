@@ -1,4 +1,4 @@
-defmodule PaymentServer.Resolvers.WalletResolver do
+defmodule PaymentServerWeb.Resolvers.WalletResolver do
   alias PaymentServer.Wallets
   alias PaymentServer.Wallets.Helpers
   alias NimbleCSV.RFC4180, as: CSV

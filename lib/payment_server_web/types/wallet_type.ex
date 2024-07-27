@@ -1,4 +1,4 @@
-defmodule PaymentServer.Types.WalletType do
+defmodule PaymentServerWeb.Types.WalletType do
   use Absinthe.Schema.Notation
 
   object :wallet_type do

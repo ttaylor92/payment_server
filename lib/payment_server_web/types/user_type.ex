@@ -1,4 +1,4 @@
-defmodule PaymentServer.Types.UserType do
+defmodule PaymentServerWeb.Types.UserType do
   use Absinthe.Schema.Notation
 
   object :user_type do

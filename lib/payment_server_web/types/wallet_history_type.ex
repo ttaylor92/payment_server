@@ -1,4 +1,4 @@
-defmodule PaymentServer.Types.WalletHistory do
+defmodule PaymentServerWeb.Types.WalletHistory do
   use Absinthe.Schema.Notation
 
   enum :transaction_type do

@@ -1,8 +1,8 @@
-defmodule PaymentServer.Schemas.WalletSchema do
+defmodule PaymentServerWeb.Schemas.WalletSchema do
   use Absinthe.Schema.Notation
 
-  alias PaymentServer.Resolvers.WalletResolver
-  alias PaymentServer.Types
+  alias PaymentServerWeb.Resolvers.WalletResolver
+  alias PaymentServerWeb.Types
 
   # Types
   import_types(Types.WalletType)

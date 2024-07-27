@@ -1,9 +1,9 @@
-defmodule PaymentServer.Schema do
+defmodule PaymentServerWeb.Schema do
   use Absinthe.Schema
 
-  alias PaymentServer.Schemas
-  alias PaymentServer.Types
-  alias PaymentServer.Resolvers.SubscriptionResolvers
+  alias PaymentServerWeb.Schemas
+  alias PaymentServerWeb.Types
+  alias PaymentServerWeb.Resolvers.SubscriptionResolvers
 
   import_types Schemas.UserSchema
   import_types Schemas.WalletSchema

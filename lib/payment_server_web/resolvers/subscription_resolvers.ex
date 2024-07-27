@@ -1,4 +1,4 @@
-defmodule PaymentServer.Resolvers.SubscriptionResolvers do
+defmodule PaymentServerWeb.Resolvers.SubscriptionResolvers do
   alias PaymentServer.PeriodicTask
 
   def subscribe_to_total_worth(_, _, %{context: %{current_user: current_user}}) do

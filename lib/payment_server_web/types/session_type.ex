@@ -1,4 +1,4 @@
-defmodule PaymentServer.Types.SessionType do
+defmodule PaymentServerWeb.Types.SessionType do
   use Absinthe.Schema.Notation
 
   object :session do

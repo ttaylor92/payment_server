@@ -1,4 +1,4 @@
-defmodule PaymentServer.Resolvers.WalletHistoryResolver do
+defmodule PaymentServerWeb.Resolvers.WalletHistoryResolver do
 
   alias PaymentServer.WalletHistory
 

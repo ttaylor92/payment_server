@@ -1,4 +1,4 @@
-defmodule PaymentServer.Resolvers.UserResolver do
+defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   alias PaymentServer.Accounts
   alias Utils.AuthToken
