@@ -17,7 +17,9 @@ defmodule PaymentServer.Application do
       # Start a worker by calling: PaymentServer.Worker.start_link(arg)
       # {PaymentServer.Worker, arg},
       # Start to serve requests, typically the last entry
-      PaymentServerWeb.Endpoint
+      PaymentServerWeb.Endpoint,
+      {Absinthe.Subscription, PaymentServerWeb.Endpoint},
+      PaymentServer.PeriodicTask
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

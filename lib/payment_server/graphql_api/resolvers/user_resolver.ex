@@ -18,10 +18,6 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
     end
   end
 
-  def create_user(_,_,_) do
-    {:error, message: "Unauthenticated!!!"}
-  end
-
   def get_user(_, %{id: id}, %{context: %{current_user: current_user}}) do
     if id !== nil do
       case Accounts.get_user(id) do
@@ -60,7 +56,7 @@ defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
 
   def update_user(_, %{input: input}, %{context: %{current_user: current_user}}) do
     if input.id === current_user.id do
-      case Accounts.update_user(current_user) do
+      case Accounts.update_user(input) do
         {:ok, result} -> {:ok,result}
         {:error, changeset} -> {:error, message: "User update failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
       end
