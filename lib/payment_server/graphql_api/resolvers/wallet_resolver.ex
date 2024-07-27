@@ -1,6 +1,6 @@
 defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
   alias PaymentServer.Wallets
-  alias PaymentServer.Accounts
+  alias PaymentServer.Wallets.Helpers
   alias NimbleCSV.RFC4180, as: CSV
 
   defp fetch_accepted_currencies() do
@@ -17,14 +17,6 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
           }
         end)
   end
-
-  defp get_user(user_id) do
-    case Accounts.get_user(user_id) do
-      nil -> {:error, :user_not_found}
-      user -> {:ok, user}
-    end
-  end
-
 
   defp find_wallet(user, id) when is_number(id) do
     case Enum.find(user.curriences, fn currency -> id === currency.id end) do
@@ -45,13 +37,6 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     case Wallets.update(updated_wallet) do
       {:ok, result} -> {:ok, result}
       {:error, changeset} -> {:error, changeset}
-    end
-  end
-
-  defp get_exchange_rate(currency_to, currency_from) do
-    case PaymentServer.ExternalApiClient.get_currency(currency_to, currency_from) do
-      {:ok, result} -> {:ok, String.to_float(result.exchange_rate)}
-      {:error, _} -> {:error, :exchange_rate_not_found}
     end
   end
 
@@ -150,7 +135,7 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
   end
 
   def process_transaction(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    with {:ok, recipient} <- get_user(input.user_id),
+    with {:ok, recipient} <- Helpers.get_user(input.user_id),
         {:ok, recipient_wallet} <- find_wallet(recipient, input.wallet_type),
         {:ok, sender_wallet} <- find_wallet(current_user, input.wallet_type),
         {:ok, _sender_result} <- update_wallet(sender_wallet, -input.requested_amount),
@@ -176,7 +161,7 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
   end
 
   def process_wallet_conversion(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    with {:ok, exchange_rate} <- get_exchange_rate(input.currency_to, input.currency_from),
+    with {:ok, exchange_rate} <- Helpers.get_exchange_rate(input.currency_to, input.currency_from),
         {:ok, wallet_to_convert} <- find_wallet(current_user, input.currency_from),
         {:ok, updated_wallet} <- convert_wallet(wallet_to_convert, exchange_rate, input.currency_to),
         {:ok, data} <- Wallets.update(updated_wallet) do
@@ -200,40 +185,4 @@ defmodule PaymentServer.GraphqlApi.Resolvers.WalletResolver do
     {:error, message: "Unauthenticated!!!"}
   end
 
-  defp fetch_exchange_and_returned_converted_value(wallet, currency_to) do
-    if wallet.type === currency_to do
-      {:ok, wallet.amount}
-    else
-      case get_exchange_rate(currency_to, wallet.type) do
-        {:ok, _rate} when is_nil(wallet.amount) -> 0
-        {:ok, rate} -> wallet.amount * rate
-        {:error, _} -> {:error, message: "Unable to retreive exhange rate for #{currency_to}"}
-      end
-    end
-  end
-
-  def get_total_worth(_, %{currency: currency}, %{context: %{current_user: current_user}}) do
-    result = current_user.curriences
-      |> Task.async_stream(
-          &fetch_exchange_and_returned_converted_value(&1, currency),
-          max_concurrency: 10,
-          timeout: 5000
-        )
-      |> Enum.reduce({:ok, 0}, fn
-          {:ok, converted_value}, {:ok, acc} when is_number(converted_value) ->
-            {:ok, acc + converted_value}
-          {:error, _} = error, {:ok, _acc} -> error
-          _other, {:ok, _acc} ->
-            {:error, message: "Unexpected result format!"}
-        end)
-
-    case result do
-      {:ok, value} -> {:ok, %{amount: value}}
-      {:error, message} -> {:error, message}
-    end
-  end
-
-  def get_total_worth(_,_,_) do
-    {:error, message: "Unauthenticated!!!"}
-  end
 end

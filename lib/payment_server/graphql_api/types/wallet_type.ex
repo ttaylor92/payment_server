@@ -14,7 +14,7 @@ defmodule PaymentServer.GraphqlApi.Types.WalletType do
     field :value, :string
   end
 
-  object :total_worth_result do
+  object :value_update_result do
     field :amount, :float
   end
 
