@@ -1,4 +1,4 @@
-defmodule PaymentServer.GraphqlApi.Resolvers.UserResolver do
+defmodule PaymentServer.Resolvers.UserResolver do
 
   alias PaymentServer.Accounts
   alias Utils.AuthToken

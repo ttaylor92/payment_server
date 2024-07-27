@@ -1,4 +1,4 @@
-defmodule PaymentServer.GraphqlApi.Types.UserType do
+defmodule PaymentServer.Types.UserType do
   use Absinthe.Schema.Notation
 
   object :user_type do

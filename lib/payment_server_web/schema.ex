@@ -1,9 +1,9 @@
-defmodule PaymentServer.GraphqlApi.Schema do
+defmodule PaymentServer.Schema do
   use Absinthe.Schema
 
-  alias PaymentServer.GraphqlApi.Schemas
-  alias PaymentServer.GraphqlApi.Types
-  alias PaymentServer.GraphqlApi.Resolvers.SubscriptionResolvers
+  alias PaymentServer.Schemas
+  alias PaymentServer.Types
+  alias PaymentServer.Resolvers.SubscriptionResolvers
 
   import_types Schemas.UserSchema
   import_types Schemas.WalletSchema
@@ -30,12 +30,12 @@ defmodule PaymentServer.GraphqlApi.Schema do
 
     field :unsubscribe_from_currency_update, type: :boolean do
       arg :currency, non_null(:string)
-      resolve &SubscriptionResolvers.unsubscribe_from_total_worth/3
+      resolve &SubscriptionResolvers.unsubscribe_from_currency/3
     end
 
     field :subscribe_to_currency_update, type: :boolean do
       arg :currency, non_null(:string)
-      resolve &SubscriptionResolvers.subscribe_to_total_worth/3
+      resolve &SubscriptionResolvers.subscribe_to_currency/3
     end
   end
 

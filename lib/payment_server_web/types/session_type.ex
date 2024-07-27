@@ -1,4 +1,4 @@
-defmodule PaymentServer.GraphqlApi.Types.SessionType do
+defmodule PaymentServer.Types.SessionType do
   use Absinthe.Schema.Notation
 
   object :session do

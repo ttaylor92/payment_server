@@ -1,4 +1,4 @@
-defmodule PaymentServer.GraphqlApi.Types.WalletType do
+defmodule PaymentServer.Types.WalletType do
   use Absinthe.Schema.Notation
 
   object :wallet_type do
@@ -16,6 +16,7 @@ defmodule PaymentServer.GraphqlApi.Types.WalletType do
 
   object :value_update_result do
     field :amount, :float
+    field :default_currency, :string
   end
 
   input_object :wallet_transfer_input_type do

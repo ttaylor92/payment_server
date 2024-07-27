@@ -18,7 +18,17 @@ defmodule PaymentServer.PeriodicTask do
     Enum.each(state.user_ids, fn user_id ->
       Helpers.get_total_worth(user_id)
     end)
+    Enum.each(state.currency_user_ids, fn user_id_with_currency ->
+      [user_id, currency] = user_id_with_currency
+      Helpers.get_currency_update(user_id, currency)
+    end)
     schedule_work()
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:add_user_id, nil}, state) do
+    IO.inspect(state, label: "Current State")
     {:noreply, state}
   end
 

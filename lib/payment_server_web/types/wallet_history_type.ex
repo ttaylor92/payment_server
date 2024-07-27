@@ -1,4 +1,4 @@
-defmodule PaymentServer.GraphqlApi.Types.WalletHistory do
+defmodule PaymentServer.Types.WalletHistory do
   use Absinthe.Schema.Notation
 
   enum :transaction_type do

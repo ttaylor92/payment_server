@@ -45,7 +45,9 @@ defmodule PaymentServer.Wallets.Helpers do
             end)
 
         case result do
-          {:ok, value} -> Absinthe.Subscription.publish(PaymentServerWeb.Endpoint, %{amount: value}, total_worth_update: user_id)
+          {:ok, value} -> Absinthe.Subscription.publish(
+              PaymentServerWeb.Endpoint, %{amount: value, default_currency: user.default_currency}, total_worth_update: user_id
+            )
           {:error, message} -> {:error, message}
         end
       {:error, _reason} -> {:error, message: "User does not exist."}
@@ -56,7 +58,9 @@ defmodule PaymentServer.Wallets.Helpers do
     case get_user(user_id) do
       {:ok, %PaymentServer.Accounts.User{} = user} ->
         case get_exchange_rate(currency_to, user.default_currency) do
-          {:ok, value} -> Absinthe.Subscription.publish(PaymentServerWeb.Endpoint, %{amount: value}, currency_update: user_id)
+          {:ok, value} -> Absinthe.Subscription.publish(
+              PaymentServerWeb.Endpoint, %{amount: value, default_currency: user.default_currency}, currency_update: currency_to
+            )
           {:error, _} -> {:error, message: "Unable to fetch update for: #{currency_to}"}
         end
       {:error, _reason} -> {:error, message: "User does not exist."}

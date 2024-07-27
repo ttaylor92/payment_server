@@ -1,4 +1,4 @@
-defmodule PaymentServer.GraphqlApi.Types.MiscType do
+defmodule PaymentServer.Types.MiscType do
   use Absinthe.Schema.Notation
 
   object :delete_response_type do

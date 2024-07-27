@@ -9,12 +9,12 @@ defmodule PaymentServerWeb.Router do
   scope "/api" do
     pipe_through :api
 
-    forward "/graphql", Absinthe.Plug, schema: PaymentServer.GraphqlApi.Schema
+    forward "/graphql", Absinthe.Plug, schema: PaymentServer.Schema
 
     if Mix.env() == :dev do
       forward "/graphiql", Absinthe.Plug.GraphiQL,
         interface: :playground,
-        schema: PaymentServer.GraphqlApi.Schema,
+        schema: PaymentServer.Schema,
         socket: PaymentServerWeb.UserSocket
     end
   end

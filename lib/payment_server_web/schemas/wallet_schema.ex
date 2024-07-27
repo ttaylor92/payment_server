@@ -1,8 +1,8 @@
-defmodule PaymentServer.GraphqlApi.Schemas.WalletSchema do
+defmodule PaymentServer.Schemas.WalletSchema do
   use Absinthe.Schema.Notation
 
-  alias PaymentServer.GraphqlApi.Resolvers.WalletResolver
-  alias PaymentServer.GraphqlApi.Types
+  alias PaymentServer.Resolvers.WalletResolver
+  alias PaymentServer.Types
 
   # Types
   import_types(Types.WalletType)

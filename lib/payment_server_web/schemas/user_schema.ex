@@ -1,8 +1,8 @@
-defmodule PaymentServer.GraphqlApi.Schemas.UserSchema do
+defmodule PaymentServer.Schemas.UserSchema do
   use Absinthe.Schema.Notation
 
-  alias PaymentServer.GraphqlApi.Resolvers
-  alias PaymentServer.GraphqlApi.Types
+  alias PaymentServer.Resolvers
+  alias PaymentServer.Types
 
   # Types
   import_types(Types.UserType)

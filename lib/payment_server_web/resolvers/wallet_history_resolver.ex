@@ -1,4 +1,4 @@
-defmodule PaymentServer.GraphqlApi.Resolvers.WalletHistoryResolver do
+defmodule PaymentServer.Resolvers.WalletHistoryResolver do
 
   alias PaymentServer.WalletHistory
 

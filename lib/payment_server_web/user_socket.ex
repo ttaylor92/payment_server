@@ -1,6 +1,6 @@
 defmodule PaymentServerWeb.UserSocket do
   use Phoenix.Socket
-  use Absinthe.Phoenix.Socket, schema: PaymentServer.GraphqlApi.Schema
+  use Absinthe.Phoenix.Socket, schema: PaymentServer.Schema
 
   alias PaymentServer.Repo
   alias PaymentServer.Accounts.User
