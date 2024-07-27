@@ -13,9 +13,9 @@ defmodule PaymentServerWeb.Router do
 
     if Mix.env() == :dev do
       forward "/graphiql", Absinthe.Plug.GraphiQL,
+        interface: :playground,
         schema: PaymentServer.GraphqlApi.Schema,
-        socket: PaymentServerWeb.UserSocket,
-        interface: :playground
+        socket: PaymentServerWeb.UserSocket
     end
   end
 
