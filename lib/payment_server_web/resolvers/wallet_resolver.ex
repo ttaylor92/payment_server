@@ -1,22 +1,6 @@
 defmodule PaymentServerWeb.Resolvers.WalletResolver do
   alias PaymentServer.Wallets
-  alias PaymentServer.Wallets.Helpers
-  alias NimbleCSV.RFC4180, as: CSV
-
-  defp fetch_accepted_currencies() do
-    root_dir = Mix.Project.app_path()
-    file_path = Path.join([root_dir, "priv", "data", "physical_currency_list.csv"])
-
-    file_path
-      |> File.stream!()
-      |> CSV.parse_stream()
-      |> Enum.map(fn [column1, column2] ->
-          %{
-            value: column1,
-            label: column2
-          }
-        end)
-  end
+  alias PaymentServerWeb.WalletHelpers
 
   defp find_wallet(user, id) when is_number(id) do
     case Enum.find(user.curriences, fn currency -> id === currency.id end) do
@@ -64,7 +48,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   end
 
   def get_currencies(_, _, %{context: %{current_user: _current_user}}) do
-    {:ok, fetch_accepted_currencies()}
+    {:ok, WalletHelpers.fetch_accepted_currencies()}
   end
 
   def get_currencies(_,_,_) do
@@ -135,7 +119,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   end
 
   def process_transaction(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    with {:ok, recipient} <- Helpers.get_user(input.user_id),
+    with {:ok, recipient} <- WalletHelpers.get_user(input.user_id),
         {:ok, recipient_wallet} <- find_wallet(recipient, input.wallet_type),
         {:ok, sender_wallet} <- find_wallet(current_user, input.wallet_type),
         {:ok, _sender_result} <- update_wallet(sender_wallet, -input.requested_amount),
@@ -161,7 +145,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   end
 
   def process_wallet_conversion(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    with {:ok, exchange_rate} <- Helpers.get_exchange_rate(input.currency_to, input.currency_from),
+    with {:ok, exchange_rate} <- WalletHelpers.get_exchange_rate(input.currency_to, input.currency_from),
         {:ok, wallet_to_convert} <- find_wallet(current_user, input.currency_from),
         {:ok, updated_wallet} <- convert_wallet(wallet_to_convert, exchange_rate, input.currency_to),
         {:ok, data} <- Wallets.update(updated_wallet) do

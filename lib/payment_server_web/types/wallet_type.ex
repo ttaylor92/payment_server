@@ -19,6 +19,12 @@ defmodule PaymentServerWeb.Types.WalletType do
     field :default_currency, :string
   end
 
+  object :all_currencies_result do
+    field :rate, :float
+    field :currency_to, :string
+    field :currency_from, :string
+  end
+
   input_object :wallet_transfer_input_type do
     field :user_id, non_null(:integer)
     field :wallet_type, non_null(:string)

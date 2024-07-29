@@ -1,5 +1,21 @@
-defmodule PaymentServer.Wallets.Helpers do
+defmodule PaymentServerWeb.WalletHelpers do
   alias PaymentServer.Accounts
+  alias NimbleCSV.RFC4180, as: CSV
+
+  def fetch_accepted_currencies() do
+    root_dir = Mix.Project.app_path()
+    file_path = Path.join([root_dir, "priv", "data", "physical_currency_list.csv"])
+
+    file_path
+      |> File.stream!()
+      |> CSV.parse_stream()
+      |> Enum.map(fn [column1, column2] ->
+          %{
+            value: column1,
+            label: column2
+          }
+        end)
+  end
 
   def get_user(user_id) do
     case Accounts.get_user(user_id) do
@@ -12,6 +28,13 @@ defmodule PaymentServer.Wallets.Helpers do
     case PaymentServer.ExternalApiClient.get_currency(currency_to, currency_from) do
       {:ok, result} -> {:ok, String.to_float(result.exchange_rate)}
       {:error, _} -> {:error, :exchange_rate_not_found}
+    end
+  end
+
+  def get_exchange_rate(currency_to, currency_from, :no_error) do
+    case PaymentServer.ExternalApiClient.get_currency(currency_to, currency_from) do
+      {:ok, result} -> %{currency_from: currency_from, currency_to: currency_to, rate: String.to_float(result.exchange_rate)}
+      {:error, _} -> %{currency_from: currency_from, currency_to: currency_to, rate: 0}
     end
   end
 
@@ -63,6 +86,27 @@ defmodule PaymentServer.Wallets.Helpers do
             )
           {:error, _} -> {:error, message: "Unable to fetch update for: #{currency_to}"}
         end
+      {:error, _reason} -> {:error, message: "User does not exist."}
+    end
+  end
+
+  def get_all_currency_updates(user_id) do
+    case get_user(user_id) do
+      {:ok, %PaymentServer.Accounts.User{} = user} ->
+        results = fetch_accepted_currencies()
+          |> Task.async_stream(
+            &get_exchange_rate(&1.value, user.default_currency, :no_error),
+            max_concurrency: 10,
+            timeout: 5000
+          )
+          |> Enum.reduce([], fn
+            {:ok, result}, acc -> [result | acc]
+            {:error, _reason}, acc -> acc
+          end)
+
+        Absinthe.Subscription.publish(
+          PaymentServerWeb.Endpoint, results, all_currencies_update: "all_currencies"
+        )
       {:error, _reason} -> {:error, message: "User does not exist."}
     end
   end

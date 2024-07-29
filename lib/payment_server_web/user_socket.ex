@@ -14,7 +14,7 @@ defmodule PaymentServerWeb.UserSocket do
       {:ok, user} ->
         socket = Absinthe.Phoenix.Socket.put_options(socket, context: %{ current_user: user })
         {:ok, socket}
-      {:error, _} -> {:error}
+      {:error, _} -> {:error, reason: "Unauthenticated"}
     end
   end
 
