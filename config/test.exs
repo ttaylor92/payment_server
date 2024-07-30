@@ -7,7 +7,7 @@ import Config
 # Run `mix help test` for more information.
 config :payment_server, PaymentServer.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "admin",
   hostname: "localhost",
   database: "payment_server_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
