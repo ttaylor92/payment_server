@@ -145,7 +145,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   end
 
   def process_wallet_conversion(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    with {:ok, exchange_rate} <- WalletHelpers.get_exchange_rate(input.currency_to, input.currency_from),
+    with {:ok, exchange_rate} <- WalletHelpers.get_exchange_rate(input.currency_to, input.currency_from, true),
         {:ok, wallet_to_convert} <- find_wallet(current_user, input.currency_from),
         {:ok, updated_wallet} <- convert_wallet(wallet_to_convert, exchange_rate, input.currency_to),
         {:ok, data} <- Wallets.update(updated_wallet) do
