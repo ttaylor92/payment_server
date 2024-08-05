@@ -14,7 +14,8 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
   def create_user(_,%{input: input},_) do
     case Accounts.create_user(input) do
       {:ok, account} -> {:ok, account}
-      {:error, changeset} -> {:error, message: "User creation failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
+      {:error, changeset} ->
+        {:error, message: "User creation failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
     end
   end
 
@@ -46,7 +47,8 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
   def delete_user(_, _, %{context: %{current_user: current_user}}) do
     case Accounts.delete_user(current_user) do
       {:ok,} -> {:ok, message: "Account deleted."}
-      {:error, changeset} -> {:error, message: "User deletion failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
+      {:error, changeset} ->
+        {:error, message: "User deletion failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
     end
   end
 
@@ -55,13 +57,10 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
   end
 
   def update_user(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    if input.id === current_user.id do
-      case Accounts.update_user(input) do
-        {:ok, result} -> {:ok,result}
-        {:error, changeset} -> {:error, message: "User update failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
-      end
-    else
-      {:error, "You do not have permissions to update this user."}
+    case Accounts.update_user(current_user, input) do
+      {:ok, result} -> {:ok, result}
+      {:error, changeset} ->
+        {:error, message: "User update failed!", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
     end
   end
 

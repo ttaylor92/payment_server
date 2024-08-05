@@ -6,7 +6,7 @@ defmodule PaymentServer.Accounts.User do
     field :first_name, :string
     field :last_name, :string
     field :email, :string
-    field :default_currency, :string
+    field :default_currency, :string, default: "USD"
     field :password_hash, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :password_confirmation, :string, virtual: true, redact: true
@@ -20,10 +20,9 @@ defmodule PaymentServer.Accounts.User do
   @required_params [:first_name, :last_name, :email, :password, :password_confirmation]
 
   @doc false
-  def changeset(user = %PaymentServer.Accounts.User{}, attrs) do
+  def changeset(%__MODULE__{} = user, attrs) do
     user
     |> cast(attrs, @available_params)
-    |> validate_required(@required_params)
     |> validate_format(:email, ~r/@/)
     |> update_change(:email, &String.downcase(&1))
     |> unique_constraint(:email)
@@ -41,6 +40,13 @@ defmodule PaymentServer.Accounts.User do
   defp hash_password(changeset), do: changeset
 
   def create_changeset(params) do
-    changeset(%__MODULE__{}, params)
+    %__MODULE__{}
+    |> changeset(params)
+    |> validate_required(@required_params)
+  end
+
+  def update_changeset(%__MODULE__{} = changeset, params) do
+    changeset
+    |> changeset(params)
   end
 end
