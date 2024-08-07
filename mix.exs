@@ -51,7 +51,8 @@ defmodule PaymentServer.MixProject do
       {:absinthe_plug, "~> 1.5"},
       {:argon2_elixir, "~> 4.0"},
       {:httpoison, "~> 2.2"},
-      {:nimble_csv, "~> 1.1"}
+      {:nimble_csv, "~> 1.1"},
+      {:factory_ex, "~> 0.1.0"}
     ]
   end
 

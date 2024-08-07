@@ -47,7 +47,36 @@ defmodule PaymentServer.ExternalApiClient do
     end
   end
 
-  defp transform_keys(%{"Realtime Currency Exchange Rate" => rate_data}) do
+  @doc """
+  Transforms the keys of the provided map by removing numerical prefixes,
+  replacing spaces with underscores, and converting them to atoms in lowercase.
+
+  ## Parameters
+
+    - `%{"Realtime Currency Exchange Rate" => rate_data}`:
+    A map with a key `"Realtime Currency Exchange Rate"` that contains another map `rate_data`.
+
+  ## Returns
+
+    - A map with the keys of `rate_data` transformed as follows:
+      - Numerical prefixes followed by a period and space (e.g., `"1. "`) are removed.
+      - Spaces are replaced with underscores.
+      - Keys are converted to lowercase atoms.
+
+  ## Examples
+
+      iex> transform_keys(
+      %{
+        "Realtime Currency Exchange Rate" => %{
+            "1. From_Currency Code" => "USD",
+            "2. From_Currency Name" => "United States Dollar"
+          }
+        }
+      )
+      %{from_currency_code: "USD", from_currency_name: "United States Dollar"}
+
+  """
+  def transform_keys(%{"Realtime Currency Exchange Rate" => rate_data}) do
     rate_data
       |> Enum.map(fn {key, value} ->
         new_key = key
