@@ -87,4 +87,8 @@ defmodule PaymentServer.ExternalApiClient do
       end)
       |> Enum.into(%{})
   end
+
+  def transform_keys(params) do
+    params
+  end
 end
