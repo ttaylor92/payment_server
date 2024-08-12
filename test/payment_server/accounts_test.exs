@@ -74,10 +74,10 @@ defmodule PaymentServer.AccountsTest do
       assert authenticated_user.email == user.email
     end
 
-    test "returns nil with incorrect credentials" do
+    test "throws an error with incorrect credentials" do
       {:ok, user} = UserFactory.build_param_map()
         |> Accounts.create_user()
-      assert {:error, "invalid password"} = Accounts.authenticate(user.email, "wrongpassword")
+      assert {:error, "No Matching account found."} = Accounts.authenticate(user.email, "wrongpassword")
     end
   end
 end

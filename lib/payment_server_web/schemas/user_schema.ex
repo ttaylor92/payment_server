@@ -32,7 +32,8 @@ defmodule PaymentServerWeb.Schemas.UserSchema do
 
     @desc "Sign a user in"
     field :sign_in, type: :session do
-      arg(:input, non_null(:session_input))
+      arg(:email, non_null(:string))
+      arg(:password, non_null(:string))
       resolve(&Resolvers.UserResolver.sign_in/3)
     end
 

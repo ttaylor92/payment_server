@@ -123,8 +123,12 @@ defmodule PaymentServer.Accounts do
   end
   """
   def authenticate(email, password) do
-    User
-    |> Repo.get_by(email: email)
-    |> Argon2.check_pass(password)
+    case User |> Repo.get_by(email: email) do
+      nil -> {:error, "No Matching account found."}
+      account -> case Argon2.verify_pass(password, account.password_hash) do
+        true -> {:ok, account}
+        false -> {:error, "No Matching account found."}
+      end
+    end
   end
 end
