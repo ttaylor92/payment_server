@@ -30,7 +30,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchema do
 
     @desc "Create a user wallet"
     field :create_wallet, type: :wallet_type do
-      arg(:input, non_null(:wallet_input_type))
+      arg(:type, non_null(:string))
       resolve(&WalletResolver.create_wallet/3)
     end
 

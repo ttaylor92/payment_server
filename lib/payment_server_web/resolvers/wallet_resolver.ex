@@ -30,8 +30,8 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
     {:ok, updated_wallet}
   end
 
-  def create_wallet(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    Map.update(input, :user_id, current_user.id, fn val -> val end)
+  def create_wallet(_, %{type: type}, %{context: %{current_user: current_user}}) do
+    %{user_id: current_user.id, type: type}
       |> Wallets.create([])
       |> case do
         {:ok, wallet} -> {:ok, wallet}
@@ -58,7 +58,10 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   def get_wallet(_,%{wallet_type: wallet_type}, %{context: %{current_user: current_user}}) do
     case find_wallet(current_user, wallet_type) do
       {:error, _} -> {:error, message: "Wallet not found!"}
-      {:ok, wallet} -> {:ok, wallet}
+      {:ok, wallet} -> case Wallets.get_by_id(wallet.id) do
+        nil -> {:error, message: "Wallet not found!"}
+        wallet -> {:ok, wallet}
+      end
     end
   end
 

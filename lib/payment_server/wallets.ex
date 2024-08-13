@@ -18,6 +18,12 @@ defmodule PaymentServer.Wallets do
     params
       |> Currency.create_changeset()
       |> Repo.insert(options)
+      |> case do
+        {:error, changeset} -> {:error, changeset}
+        {:ok, struct} ->
+          wallet = Repo.preload(struct, :user)
+          {:ok, wallet}
+      end
   end
 
   @doc """

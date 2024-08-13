@@ -11,7 +11,7 @@ defmodule PaymentServer.Wallets.Currency do
     timestamps(type: :utc_datetime)
   end
 
-  @available_params [:type, :amount, :user_id]
+  @available_params [:type, :user_id]
   @required_params [:type, :user_id]
 
   def create_changeset(params) do
