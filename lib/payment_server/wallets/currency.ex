@@ -19,10 +19,15 @@ defmodule PaymentServer.Wallets.Currency do
   end
 
   @doc false
-  def changeset(currency = %PaymentServer.Wallets.Currency{}, attrs) do
+  def changeset(%__MODULE__{} = currency, attrs) do
     currency
     |> cast(attrs, @available_params)
     |> validate_required(@required_params)
     |> unique_constraint(:user_id_type, name: :currencies_user_id_type_index)
+  end
+
+  def update_changeset(%__MODULE__{} = changeset, attrs) do
+    changeset
+    |> cast(attrs, [:amount, :type])
   end
 end

@@ -17,8 +17,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   end
 
   defp update_wallet(wallet, amount_change) do
-    updated_wallet = %{wallet | amount: wallet.amount + amount_change}
-    case Wallets.update(updated_wallet) do
+    case Wallets.update(wallet, %{amount: wallet.amount + amount_change}) do
       {:ok, result} -> {:ok, result}
       {:error, changeset} -> {:error, changeset}
     end
@@ -83,10 +82,12 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   def update_wallet(_,%{input: input}, %{context: %{current_user: current_user}}) do
     case find_wallet(current_user, String.to_integer(input.id)) do
       {:error, _} -> {:error, message: "Wallet not found!"}
-      {:ok, wallet} -> %{input | id: String.to_integer(input.id)}
-        |> Map.put(:user_id, current_user.id)
-        |> Map.put(:type, wallet.type)
-        |> Wallets.update()
+      {:ok, wallet} ->
+        attrs = %{input | id: String.to_integer(input.id)}
+          |> Map.put(:user_id, current_user.id)
+          |> Map.put(:type, wallet.type)
+
+        Wallets.update(wallet, attrs)
         |> case do
           {:ok, result} -> {:ok, result}
           {:error, changeset} -> {
@@ -107,7 +108,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
       {:error, _} -> {:error, message: "Wallet was not found."}
 
       {:ok, wallet} -> case Wallets.delete(wallet) do
-          {:ok} -> {:ok, message: "Wallet deleted."}
+          {:ok, _result} -> {:ok, %{message: "Wallet deleted."}}
           {:error, changeset} -> {
             :error,
             message: "Wallet update failed!",
@@ -125,8 +126,8 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
     with {:ok, recipient} <- WalletHelpers.get_user(input.user_id),
         {:ok, recipient_wallet} <- find_wallet(recipient, input.wallet_type),
         {:ok, sender_wallet} <- find_wallet(current_user, input.wallet_type),
-        {:ok, _sender_result} <- update_wallet(sender_wallet, -input.requested_amount),
-        {:ok, sender_result} <- update_wallet(recipient_wallet, input.requested_amount) do
+        {:ok, sender_result} <- update_wallet(sender_wallet, -input.requested_amount),
+        {:ok, _recipient_result} <- update_wallet(recipient_wallet, input.requested_amount) do
       {:ok, sender_result}
     else
       {:error, :user_not_found} ->
@@ -151,7 +152,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
     with {:ok, exchange_rate} <- WalletHelpers.get_exchange_rate(input.currency_to, input.currency_from, true),
         {:ok, wallet_to_convert} <- find_wallet(current_user, input.currency_from),
         {:ok, updated_wallet} <- convert_wallet(wallet_to_convert, exchange_rate, input.currency_to),
-        {:ok, data} <- Wallets.update(updated_wallet) do
+        {:ok, data} <- Wallets.update(wallet_to_convert, updated_wallet) do
       {:ok, data}
     else
       {:error, :exchange_rate_not_found} ->

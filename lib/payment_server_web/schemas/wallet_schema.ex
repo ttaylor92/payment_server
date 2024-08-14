@@ -34,10 +34,12 @@ defmodule PaymentServerWeb.Schemas.WalletSchema do
       resolve(&WalletResolver.create_wallet/3)
     end
 
-    @desc "Update a user wallet"
-    field :update_wallet, type: :wallet_type do
-      arg(:input, non_null(:wallet_update_type))
-      resolve(&WalletResolver.update_wallet/3)
+    if Enum.member?([:dev, :test], Mix.env()) do
+      @desc "Update a user wallet"
+      field :update_wallet, type: :wallet_type do
+        arg(:input, non_null(:wallet_update_type))
+        resolve(&WalletResolver.update_wallet/3)
+      end
     end
 
     @desc "Process a wallet transfer request"
@@ -46,10 +48,12 @@ defmodule PaymentServerWeb.Schemas.WalletSchema do
       resolve(&WalletResolver.process_transaction/3)
     end
 
-    @desc "Process a wallet conversion request"
-    field :process_conversion_request, type: :wallet_type do
-      arg(:input, non_null(:wallet_convert_input_type))
-      resolve(&WalletResolver.process_wallet_conversion/3)
+    if Mix.env() === :dev do
+      @desc "Process a wallet conversion request"
+      field :process_conversion_request, type: :wallet_type do
+        arg(:input, non_null(:wallet_convert_input_type))
+        resolve(&WalletResolver.process_wallet_conversion/3)
+      end
     end
 
     @desc "Delete a user wallet"
