@@ -4,65 +4,22 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   alias PaymentServerWeb.Schema
   alias PaymentServer.{Accounts, Wallets, UserFactory, WalletFactory}
 
-  describe "@wallet:" do
-    setup [:setup_account]
+  setup [:setup_account]
 
-    @wallet_query """
-    query getWallet($walletType: String!) {
-      getWallet(walletType: $walletType) {
-        id
-        type
-        user {
-          id
-          firstName
-        }
-      }
-    }
-    """
-    @all_wallets_query"""
-    query {
-      getWallets {
-        id
-        type
-      }
-    }
-    """
-    @create_wallet_mutation """
-    mutation createWallet($type: String!) {
-      createWallet(type: $type) {
-        id
-        type
-        user {
-          id
-        }
-      }
-    }
-    """
-    @currencies_query """
-    query getCurrencies {
-      getCurrencies {
-        label
-        value
-      }
-    }
-    """
-    @delete_wallet_mutation """
-    mutation deleteWallet($id: ID!) {
-      deleteWallet(id: $id) {
-        message
-      }
-    }
-    """
-    @wallet_transfer_mutation """
-    mutation processTransferRequest($input: WalletTransferInputType!) {
-      processTransferRequest(input: $input) {
-        id
-        amount
-      }
-    }
-    """
-    @authentication_error_msg "Unauthenticated!!!"
+  @authentication_error_msg "Unauthenticated!!!"
 
+  @create_wallet_mutation """
+  mutation createWallet($type: String!) {
+    createWallet(type: $type) {
+      id
+      type
+      user {
+        id
+      }
+    }
+  }
+  """
+  describe "@Wallet - Wallet Creation" do
     test "a user can create a wallet", %{user: user} do
       assert {:ok, %{data: %{"createWallet" => data}}} = Absinthe.run(@create_wallet_mutation, Schema, [
         variables: %{
@@ -80,7 +37,29 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     test "a user cannot create a wallet when unauthenticated" do
       make_unathenticated_request(@create_wallet_mutation, "createWallet", %{"type" => "AUD"})
     end
+  end
 
+  @wallet_query """
+    query getWallet($walletType: String!) {
+      getWallet(walletType: $walletType) {
+        id
+        type
+        user {
+          id
+          firstName
+        }
+      }
+    }
+  """
+  @all_wallets_query"""
+  query {
+    getWallets {
+      id
+      type
+    }
+  }
+  """
+  describe "@Wallet - Get Wallet/s:" do
     test "a user can get his wallet", %{user: user} do
       assert {:ok, %{data: %{"createWallet" => wallet}}} = Absinthe.run(@create_wallet_mutation, Schema, [
         variables: %{
@@ -127,7 +106,17 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     test "a user cannot get all his wallets when unauthenticated" do
       make_unathenticated_request(@all_wallets_query, "getWallets")
     end
+  end
 
+  @currencies_query """
+    query getCurrencies {
+      getCurrencies {
+        label
+        value
+      }
+    }
+  """
+  describe "@Wallet - Currencies" do
     test "a user can get the list of accepted currencies", %{user: user} do
       assert {:ok, %{data: %{"getCurrencies" => data}}} = Absinthe.run(@currencies_query, Schema, context: %{
         current_user: user
@@ -140,7 +129,16 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     test "a user cannot get the list of accepted currencies when unauthenticated" do
       make_unathenticated_request(@currencies_query, "getCurrencies")
     end
+  end
 
+  @delete_wallet_mutation """
+  mutation deleteWallet($id: ID!) {
+    deleteWallet(id: $id) {
+      message
+    }
+  }
+  """
+  describe "@Wallet - Deletion:" do
     test "a user can delete his wallet", %{user: user} do
       {:ok, wallet} = WalletFactory.build_param_map(%{user_id: user.id})
       |> Wallets.create()
@@ -160,6 +158,17 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     test "a user cannot delete a wallet while being unauthenticated" do
       make_unathenticated_request(@delete_wallet_mutation, "deleteWallet", %{"id" => 20})
     end
+  end
+
+  @wallet_transfer_mutation """
+  mutation processTransferRequest($input: WalletTransferInputType!) {
+    processTransferRequest(input: $input) {
+      id
+      amount
+    }
+  }
+  """
+  describe "@Wallet - Transfer:" do
 
     test "a user can transfer an amount to another user of the same currency", %{user: user} do
       {:ok, wallet} = WalletFactory.build_param_map(%{user_id: user.id})

@@ -4,51 +4,8 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   alias PaymentServerWeb.Schema
   alias PaymentServer.{Accounts, UserFactory}
 
-  @authentication_mutation """
-    mutation signIn($email: String!, $password: String!) {
-      signIn(email: $email, password: $password) {
-        token
-      }
-    }
-  """
-  @registration_mutation """
-  mutation($input: UserInputType!) {
-    registerUser(input: $input) {
-      id
-      email
-    }
-  }
-  """
-  @all_users_query """
-  query {
-    getAllUsers {
-      id
-    }
-  }
-  """
-  @get_a_user_query """
-  query {
-    getAUser {
-      id
-      firstName
-    }
-  }
-  """
-  @delete_user_mutation """
-  mutation {
-    deleteUser {
-      message
-    }
-  }
-  """
-  @update_user_mutation """
-  mutation updateUser($input: UserUpdateType!) {
-    updateUser(input: $input) {
-      id
-      firstName
-    }
-  }
-  """
+  setup [:setup_account]
+
   @valid_user_params %{
     "first_name" => "John",
     "last_name" => "Doe",
@@ -60,8 +17,14 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   @update_params %{"first_name" => "Jane"}
   @authentication_error_msg "Unauthenticated!!!"
 
-  describe "@User:" do
-    setup [:setup_account]
+  @authentication_mutation """
+  mutation signIn($email: String!, $password: String!) {
+    signIn(email: $email, password: $password) {
+      token
+    }
+  }
+  """
+  describe "@User - Sign In:" do
 
     test "a user can sign in" do
       assert {:ok, %{data: %{"signIn" => data}}} = Absinthe.run(@authentication_mutation, Schema, variables: %{
@@ -78,7 +41,45 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
       })
       assert List.first(errors).message === "Signin failed!"
     end
+  end
 
+  @update_user_mutation """
+  mutation updateUser($input: UserUpdateType!) {
+    updateUser(input: $input) {
+      id
+      firstName
+    }
+  }
+  """
+  describe "@User - Account Update:" do
+    test "a user cannot update his account while being unauthenticated" do
+      make_unathenticated_request(@update_user_mutation, %{
+        "input" => @update_params
+      })
+    end
+
+    test "a user can update his account", %{user: user} do
+      assert {:ok, %{data: %{"updateUser" => updated_user}}} = Absinthe.run(@update_user_mutation, Schema, [
+        context: %{
+          current_user: user
+        },
+        variables: %{
+          "input" => @update_params
+        }
+      ])
+      assert updated_user["firstName"] === @update_params["first_name"]
+    end
+  end
+
+  @registration_mutation """
+  mutation($input: UserInputType!) {
+    registerUser(input: $input) {
+      id
+      email
+    }
+  }
+  """
+  describe "@User - Registration:" do
     test "a user can be registered" do
       assert {:ok, %{data: %{"registerUser"=> result}}} = Absinthe.run(@registration_mutation, Schema,
         variables: %{
@@ -95,7 +96,24 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
 
       assert List.first(errors).message === "User creation failed!"
     end
+  end
 
+  @all_users_query """
+  query {
+    getAllUsers {
+      id
+    }
+  }
+  """
+  @get_a_user_query """
+  query {
+    getAUser {
+      id
+      firstName
+    }
+  }
+  """
+  describe "@User - Get User Information" do
     test "a user can get all users", %{user: user} do
       assert {:ok, %{data: %{"getAllUsers" => data}}} = Absinthe.run(@all_users_query, Schema, context: %{
         current_user: user
@@ -142,6 +160,33 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
       assert String.to_integer(data["id"]) === user2.id
       assert data["firstName"] === user2.first_name
     end
+  end
+
+  @delete_user_mutation """
+  mutation {
+    deleteUser {
+      message
+    }
+  }
+  """
+  describe "@User - Account Deletion" do
+    test "a user cannot delete his account while being unauthenticated" do
+      make_unathenticated_request(@delete_user_mutation)
+    end
+
+    test "a user can delete his account", %{user: user} do
+      assert {:ok, %{data: %{"getAllUsers" => all_users}}} = Absinthe.run(@all_users_query, Schema, context: %{
+        current_user: user
+      })
+      assert length(all_users) === 1
+      assert {:ok, %{data: _data}} = Absinthe.run(@delete_user_mutation, Schema, context: %{
+        current_user: user
+      })
+      assert {:ok, %{data: %{"getAllUsers" => all_users}}} = Absinthe.run(@all_users_query, Schema, context: %{
+        current_user: user
+      })
+      assert length(all_users) === 0
+    end
 
     test "a user cannot delete another user", %{user: user} do
       mutation = """
@@ -178,44 +223,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
       ])
       assert String.contains? List.first(errors).message, "Unknown argument \"email\""
     end
-
-    test "a user cannot delete his account while being unauthenticated" do
-      make_unathenticated_request(@delete_user_mutation)
-    end
-
-    test "a user can delete his account", %{user: user} do
-      assert {:ok, %{data: %{"getAllUsers" => all_users}}} = Absinthe.run(@all_users_query, Schema, context: %{
-        current_user: user
-      })
-      assert length(all_users) === 1
-      assert {:ok, %{data: _data}} = Absinthe.run(@delete_user_mutation, Schema, context: %{
-        current_user: user
-      })
-      assert {:ok, %{data: %{"getAllUsers" => all_users}}} = Absinthe.run(@all_users_query, Schema, context: %{
-        current_user: user
-      })
-      assert length(all_users) === 0
-    end
-
-    test "a user cannot update his account while being unauthenticated" do
-      make_unathenticated_request(@update_user_mutation, %{
-        "input" => @update_params
-      })
-    end
-
-    test "a user can update his account", %{user: user} do
-      assert {:ok, %{data: %{"updateUser" => updated_user}}} = Absinthe.run(@update_user_mutation, Schema, [
-        context: %{
-          current_user: user
-        },
-        variables: %{
-          "input" => @update_params
-        }
-      ])
-      assert updated_user["firstName"] === @update_params["first_name"]
-    end
   end
-
 
 
   defp make_unathenticated_request(absinthe_doc, variables \\ %{}) do
