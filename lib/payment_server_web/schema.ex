@@ -5,7 +5,6 @@ defmodule PaymentServerWeb.Schema do
 
   import_types Schemas.UserSchema
   import_types Schemas.WalletSchema
-  import_types Schemas.SubscriptionSchema
   import_types Subscriptions.WalletSubscriptions
   import_types Types.MiscType
 
@@ -17,7 +16,6 @@ defmodule PaymentServerWeb.Schema do
   mutation do
     import_fields :user_mutations
     import_fields :wallet_mutations
-    import_fields :subscription_mutations
   end
 
   subscription do
