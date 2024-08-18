@@ -51,12 +51,12 @@ defmodule PaymentServerWeb.WalletHelpers do
 
   defp fetch_exchange_and_returned_converted_value(wallet, currency_to, api_client) do
     if wallet.type == currency_to do
-      {:ok, wallet.amount}
+      wallet.amount
     else
       case get_exchange_rate(currency_to, wallet.type, true, api_client) do
         {:ok, _rate} when is_nil(wallet.amount) -> 0
         {:ok, rate} -> wallet.amount * rate
-        {:error, _} -> {:error, message: "Unable to retrieve exchange rate for #{currency_to}"}
+        {:error, _} -> 0
       end
     end
   end
@@ -92,48 +92,41 @@ defmodule PaymentServerWeb.WalletHelpers do
   end
 
   @doc """
-  Publishes a currency update for a user.
+  Publishes a currency update.
   """
-  def get_currency_update(user_id, currency_to, accounts \\ Accounts, api_client \\ PaymentServer.ExternalApiClient) do
-    case get_user(user_id, accounts) do
-      {:ok, %PaymentServer.Accounts.User{} = user} ->
-        case get_exchange_rate(currency_to, user.default_currency, true, api_client) do
-          {:ok, value} -> Absinthe.Subscription.publish(
-              PaymentServerWeb.Endpoint, %{amount: value, default_currency: user.default_currency}, currency_update: currency_to
-            )
-          {:error, _} -> {:error, message: "Unable to fetch update for: #{currency_to}"}
-        end
-      {:error, _reason} -> {:error, message: "User does not exist."}
+  def get_currency_update(currency_to, default_currency \\ "USD", api_client \\ PaymentServer.ExternalApiClient) do
+    topic = "currency:#{currency_to}"
+
+    case get_exchange_rate(currency_to, default_currency, true, api_client) do
+      {:ok, value} -> Absinthe.Subscription.publish(
+          PaymentServerWeb.Endpoint, %{amount: value, default_currency: default_currency}, currency_update: topic
+        )
+      {:error, _} -> {:error, message: "Unable to fetch update for: #{currency_to}"}
     end
   end
 
   @doc """
-  Publishes updates for all currencies for a user.
+  Publishes updates for all currencies.
   """
   def get_all_currency_updates(
-    user_id,
-    accounts \\ Accounts,
+    default_currency \\ "USD",
     api_client \\ PaymentServer.ExternalApiClient,
     file_reader \\ &File.read!/1,
     csv_parser \\ &CSV.parse_string/1
     ) do
-    case get_user(user_id, accounts) do
-      {:ok, %PaymentServer.Accounts.User{} = user} ->
-        results = fetch_accepted_currencies(file_reader, csv_parser)
-        |> Task.async_stream(
-          &get_exchange_rate(&1.value, user.default_currency, false, api_client),
-          max_concurrency: 10,
-          timeout: 5000
-        )
-        |> Enum.reduce([], fn
-          {:ok, result}, acc -> [result | acc]
-          {:error, _reason}, acc -> acc
-        end)
+    results = fetch_accepted_currencies(file_reader, csv_parser)
+      |> Task.async_stream(
+        &get_exchange_rate(&1.value, default_currency, false, api_client),
+        max_concurrency: 10,
+        timeout: 5000
+      )
+      |> Enum.reduce([], fn
+        {:ok, result}, acc -> [result | acc]
+        {:error, _reason}, acc -> acc
+      end)
 
-        Absinthe.Subscription.publish(
-          PaymentServerWeb.Endpoint, results, all_currencies_update: "all_currencies"
-        )
-      {:error, _reason} -> {:error, message: "User does not exist."}
-    end
+      Absinthe.Subscription.publish(
+        PaymentServerWeb.Endpoint, results, all_currencies_update: "all_currencies"
+      )
   end
 end

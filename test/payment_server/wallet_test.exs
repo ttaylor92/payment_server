@@ -31,8 +31,7 @@ defmodule PaymentServer.WalletTest do
       currency_attrs = WalletFactory.build_param_map(%{user_id: user.id})
       {:ok, currency} = Wallets.create(currency_attrs)
 
-      update_attrs = Map.put(%{currency_attrs | type: "EUR"}, :id, currency.id)
-      assert {:ok, %Currency{} = updated_currency} = Wallets.update(update_attrs)
+      assert {:ok, %Currency{} = updated_currency} = Wallets.update(currency, %{ type: "EUR"})
       assert updated_currency.type == "EUR"
     end
 
@@ -40,8 +39,7 @@ defmodule PaymentServer.WalletTest do
       currency_attrs = WalletFactory.build_param_map(%{user_id: user.id})
       {:ok, currency} = Wallets.create(currency_attrs)
 
-      invalid_attrs = Map.put(%{currency_attrs | type: 100}, :id, currency.id)
-      assert {:error, %Ecto.Changeset{}} = Wallets.update(invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Wallets.update(currency, %{type: 100})
     end
   end
 

@@ -128,6 +128,8 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
         {:ok, sender_wallet} <- find_wallet(current_user, input.wallet_type),
         {:ok, sender_result} <- update_wallet(sender_wallet, -input.requested_amount),
         {:ok, _recipient_result} <- update_wallet(recipient_wallet, input.requested_amount) do
+      WalletHelpers.get_total_worth(current_user.id)
+      WalletHelpers.get_total_worth(recipient.id)
       {:ok, sender_result}
     else
       {:error, :user_not_found} ->
