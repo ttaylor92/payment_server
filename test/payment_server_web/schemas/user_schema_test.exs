@@ -2,7 +2,8 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   use PaymentServer.DataCase, async: true
 
   alias PaymentServerWeb.Schema
-  alias PaymentServer.{Accounts, UserFactory}
+  alias PaymentServer.{Accounts}
+  alias PaymentServer.Support.{UserFactory}
 
   setup [:setup_account]
 

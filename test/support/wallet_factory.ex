@@ -1,4 +1,4 @@
-defmodule PaymentServer.WalletFactory do
+defmodule PaymentServer.Support.WalletFactory do
   @behaviour FactoryEx
 
   def schema, do: PaymentServer.Wallets.Currency

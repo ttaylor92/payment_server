@@ -4,7 +4,7 @@ defmodule PaymentServer.WalletTest do
   alias PaymentServer.Wallets
   alias PaymentServer.Accounts
   alias PaymentServer.Wallets.Currency
-  alias PaymentServer.{WalletFactory, UserFactory}
+  alias PaymentServer.Support.{WalletFactory, UserFactory}
 
   setup [:setup_account]
 

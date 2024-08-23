@@ -2,7 +2,8 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   use PaymentServer.DataCase, async: true
 
   alias PaymentServerWeb.Schema
-  alias PaymentServer.{Accounts, Wallets, UserFactory, WalletFactory}
+  alias PaymentServer.{Accounts, Wallets}
+  alias PaymentServer.Support.{UserFactory, WalletFactory}
 
   setup [:setup_account]
 

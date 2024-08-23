@@ -3,7 +3,7 @@ defmodule PaymentServer.AccountsTest do
 
   alias PaymentServer.Accounts
   alias PaymentServer.Accounts.User
-  alias PaymentServer.UserFactory
+  alias PaymentServer.Support.UserFactory
 
   describe "list_users/0" do
     test "returns all users" do

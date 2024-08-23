@@ -1,4 +1,4 @@
-defmodule PaymentServer.UserFactory do
+defmodule PaymentServer.Support.UserFactory do
   @behaviour FactoryEx
 
   def schema, do: PaymentServer.Accounts.User
