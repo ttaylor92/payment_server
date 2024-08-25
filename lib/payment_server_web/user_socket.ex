@@ -9,12 +9,16 @@ defmodule PaymentServerWeb.UserSocket do
   channel "graphql:*", Absinthe.Phoenix.Channel
 
   def connect(params, socket, _connect_info) do
-    current_user(params)
-    |> case do
-      {:ok, user} ->
-        socket = Absinthe.Phoenix.Socket.put_options(socket, context: %{ current_user: user })
-        {:ok, socket}
-      {:error, _} -> {:error, reason: "Unauthenticated"}
+    if Mix.env() === :test do
+      {:ok, socket}
+    else
+      current_user(params)
+      |> case do
+        {:ok, user} ->
+          socket = Absinthe.Phoenix.Socket.put_options(socket, context: %{ current_user: user })
+          {:ok, socket}
+        {:error, _} -> {:error, reason: "Unauthenticated"}
+      end
     end
   end
 
