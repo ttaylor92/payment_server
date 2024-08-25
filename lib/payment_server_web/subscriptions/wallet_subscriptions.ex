@@ -4,7 +4,7 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptions do
   @subscribe_message "Subscribe to recieve 1 minute updates for"
 
   object :wallet_subscriptions do
-    @desc "#{@subscribe_message} total user worth notifications"
+    @desc "Subscribe to recieve total user worth notifications"
     field :total_worth_update, :value_update_result do
       config fn _, %{context: %{ current_user: current_user }} ->
         {:ok, topic: current_user.id}

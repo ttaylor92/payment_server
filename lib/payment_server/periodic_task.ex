@@ -4,7 +4,9 @@ defmodule PaymentServer.PeriodicTask do
 
   alias PaymentServerWeb.WalletHelpers
 
-  @interval :timer.minutes(1)
+  @default_interval :timer.minutes(1)
+  @test_interval :timer.seconds(10)
+  @interval if Mix.env() === :test, do: @test_interval, else: @default_interval
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
