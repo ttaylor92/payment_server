@@ -8,7 +8,6 @@ defmodule PaymentServerWeb.Schemas.WalletHistorySchema do
   import_types(Types.WalletHistory)
 
   object :wallet_history_queries do
-
     @desc "Get wallet history"
     field :get_wallet_history, type: :history_type do
       arg(:id, non_null(:id))
@@ -17,7 +16,6 @@ defmodule PaymentServerWeb.Schemas.WalletHistorySchema do
   end
 
   object :wallet_history_mutations do
-
     @desc "Create a wallet history"
     field :create_wallet_history, type: :history_type do
       arg(:input, non_null(:history_input_type))

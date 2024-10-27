@@ -16,14 +16,16 @@ defmodule PaymentServer.Wallets do
   """
   def create(params \\ %{}, options \\ []) do
     params
-      |> Currency.create_changeset()
-      |> Repo.insert(options)
-      |> case do
-        {:error, changeset} -> {:error, changeset}
-        {:ok, struct} ->
-          wallet = Repo.preload(struct, :user)
-          {:ok, wallet}
-      end
+    |> Currency.create_changeset()
+    |> Repo.insert(options)
+    |> case do
+      {:error, changeset} ->
+        {:error, changeset}
+
+      {:ok, struct} ->
+        wallet = Repo.preload(struct, :user)
+        {:ok, wallet}
+    end
   end
 
   @doc """
@@ -39,12 +41,12 @@ defmodule PaymentServer.Wallets do
   """
   def update(%Currency{} = changeset, params) do
     changeset
-      |> Currency.update_changeset(params)
-      |> Repo.update()
-      |> case do
-        {:ok, schema} -> {:ok, Repo.preload(schema, [:user, :transaction])}
-        error -> error
-      end
+    |> Currency.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, schema} -> {:ok, Repo.preload(schema, [:user, :transaction])}
+      error -> error
+    end
   end
 
   @doc """
@@ -100,6 +102,6 @@ defmodule PaymentServer.Wallets do
   """
   def get_all(id) do
     from(w in Currency, where: w.user_id == ^id)
-      |> Repo.all()
+    |> Repo.all()
   end
 end

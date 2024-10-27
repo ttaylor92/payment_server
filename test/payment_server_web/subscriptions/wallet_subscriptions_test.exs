@@ -15,8 +15,7 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
   end
 
   describe "@Currency" do
-
-    @currency_subscription"""
+    @currency_subscription """
     subscription currencyUpdate($currency: String!) {
       currencyUpdate(currency: $currency) {
         amount
@@ -35,19 +34,18 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
       assert_push "subscription:data", data, :timer.seconds(12)
 
       assert %{
-        subscriptionId: ^subscription_id,
-        result: %{
-          data: %{
-            "currencyUpdate" => %{
-              "amount" => _amount
-            }
-          }
-        }
-      } = data
-
+               subscriptionId: ^subscription_id,
+               result: %{
+                 data: %{
+                   "currencyUpdate" => %{
+                     "amount" => _amount
+                   }
+                 }
+               }
+             } = data
     end
 
-    @all_currencies_subscription"""
+    @all_currencies_subscription """
     subscription allCurrenciesUpdate {
       allCurrenciesUpdate {
         rate
@@ -68,13 +66,14 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
       assert_push "subscription:data", data, :timer.seconds(12)
 
       assert %{
-        subscriptionId: ^subscription_id,
-        result: %{
-          data: %{
-            "allCurrenciesUpdate" => allCurrenciesUpdateData
-          }
-        }
-      } = data
+               subscriptionId: ^subscription_id,
+               result: %{
+                 data: %{
+                   "allCurrenciesUpdate" => allCurrenciesUpdateData
+                 }
+               }
+             } = data
+
       assert length(allCurrenciesUpdateData) > 0
     end
   end
@@ -119,32 +118,34 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
       # Trigger mutation
       requested_amount = 50.00
 
-      ref = push_doc(socket, @wallet_transfer_mutation,[
-        context: %{
-          current_user: user
-        },
-        variables: %{
-          "input" => %{
-            "requested_amount" => requested_amount,
-            "user_id" => receiver.id,
-            "wallet_type" => wallet.type
+      ref =
+        push_doc(socket, @wallet_transfer_mutation,
+          context: %{
+            current_user: user
+          },
+          variables: %{
+            "input" => %{
+              "requested_amount" => requested_amount,
+              "user_id" => receiver.id,
+              "wallet_type" => wallet.type
+            }
           }
-        }]
-      )
+        )
+
       assert_reply ref, :ok, _reply
 
       assert_push "subscription:data", data
 
       assert %{
-        subscriptionId: ^subscription_id,
-        result: %{
-          data: %{
-            "totalWorthUpdate" => %{
-              "amount" => ^requested_amount
-            }
-          }
-        }
-      } = data
+               subscriptionId: ^subscription_id,
+               result: %{
+                 data: %{
+                   "totalWorthUpdate" => %{
+                     "amount" => ^requested_amount
+                   }
+                 }
+               }
+             } = data
     end
   end
 
@@ -161,9 +162,11 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
   end
 
   defp setup_user_socket(token) do
-    {:ok, socket} = Phoenix.ChannelTest.connect(PaymentServerWeb.UserSocket, %{
-      "authorization" => "Bearer " <> token
-    })
+    {:ok, socket} =
+      Phoenix.ChannelTest.connect(PaymentServerWeb.UserSocket, %{
+        "authorization" => "Bearer " <> token
+      })
+
     {:ok, socket} = Absinthe.Phoenix.SubscriptionTest.join_absinthe(socket)
 
     socket

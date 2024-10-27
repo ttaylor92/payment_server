@@ -4,16 +4,18 @@ defmodule PaymentServer.PeriodicTask do
 
   alias PaymentServerWeb.WalletHelpers
 
+  @default_name __MODULE__
   @interval if Mix.env() === :test, do: :timer.seconds(10), else: :timer.minutes(1)
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  def start_link(opts \\ []) do
+    opts = Keyword.put_new(opts, :name, @default_name)
+    GenServer.start_link(__MODULE__, %{}, opts)
   end
 
   @impl true
-  def init(_) do
+  def init(state) do
     schedule_work()
-    {:ok, %{}}
+    {:ok, state}
   end
 
   @impl true
@@ -37,7 +39,8 @@ defmodule PaymentServer.PeriodicTask do
   end
 
   defp check_currency_subscriptions() do
-    currencies = WalletHelpers.fetch_accepted_currencies()
+    currencies =
+      WalletHelpers.fetch_accepted_currencies()
       |> Enum.map(fn currency_map -> currency_map.value end)
 
     Enum.each(currencies, fn currency ->

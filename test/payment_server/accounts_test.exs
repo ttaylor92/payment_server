@@ -43,7 +43,9 @@ defmodule PaymentServer.AccountsTest do
   describe "update_user/2" do
     test "updates the user with valid data" do
       {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
-      updated_user_req = %{UserFactory.build_param_map() | first_name: "new_first_name"}
+
+      updated_user_req =
+        %{UserFactory.build_param_map() | first_name: "new_first_name"}
         |> Map.put(:id, user.id)
 
       assert {:ok, updated_user} = Accounts.update_user(user, updated_user_req)
@@ -68,16 +70,21 @@ defmodule PaymentServer.AccountsTest do
 
   describe "authenticate/2" do
     test "authenticates the user with correct credentials" do
-      {:ok, user} = UserFactory.build_param_map()
+      {:ok, user} =
+        UserFactory.build_param_map()
         |> Accounts.create_user()
+
       {:ok, authenticated_user} = Accounts.authenticate(user.email, "secret")
       assert authenticated_user.email == user.email
     end
 
     test "throws an error with incorrect credentials" do
-      {:ok, user} = UserFactory.build_param_map()
+      {:ok, user} =
+        UserFactory.build_param_map()
         |> Accounts.create_user()
-      assert {:error, "No Matching account found."} = Accounts.authenticate(user.email, "wrongpassword")
+
+      assert {:error, "No Matching account found."} =
+               Accounts.authenticate(user.email, "wrongpassword")
     end
   end
 end

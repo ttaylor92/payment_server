@@ -8,7 +8,7 @@ defmodule PaymentServer.Support.WalletFactory do
   def build(params \\ %{}) do
     default = %{
       type: "USD",
-      amount: 10000.00,
+      amount: 10000.00
     }
 
     Map.merge(default, params)

@@ -22,14 +22,15 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   """
   describe "@Wallet - Wallet Creation" do
     test "a user can create a wallet", %{user: user} do
-      assert {:ok, %{data: %{"createWallet" => data}}} = Absinthe.run(@create_wallet_mutation, Schema, [
-        variables: %{
-          "type" => "AUD"
-        },
-        context: %{
-          current_user: user
-        }
-      ])
+      assert {:ok, %{data: %{"createWallet" => data}}} =
+               Absinthe.run(@create_wallet_mutation, Schema,
+                 variables: %{
+                   "type" => "AUD"
+                 },
+                 context: %{
+                   current_user: user
+                 }
+               )
 
       assert data["type"] === "AUD"
       assert String.to_integer(data["user"]["id"]) === user.id
@@ -52,7 +53,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
       }
     }
   """
-  @all_wallets_query"""
+  @all_wallets_query """
   query {
     getWallets {
       id
@@ -62,24 +63,27 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   """
   describe "@Wallet - Get Wallet/s:" do
     test "a user can get his wallet", %{user: user} do
-      assert {:ok, %{data: %{"createWallet" => wallet}}} = Absinthe.run(@create_wallet_mutation, Schema, [
-        variables: %{
-          "type" => "AUD"
-        },
-        context: %{
-          current_user: user
-        }
-      ])
+      assert {:ok, %{data: %{"createWallet" => wallet}}} =
+               Absinthe.run(@create_wallet_mutation, Schema,
+                 variables: %{
+                   "type" => "AUD"
+                 },
+                 context: %{
+                   current_user: user
+                 }
+               )
 
       updated_user = Accounts.get_user(user.id)
-      assert {:ok, %{data: %{"getWallet" => data}}} = Absinthe.run(@wallet_query, Schema, [
-        variables: %{
-          "walletType" => "AUD"
-        },
-        context: %{
-          current_user: updated_user
-        }
-      ])
+
+      assert {:ok, %{data: %{"getWallet" => data}}} =
+               Absinthe.run(@wallet_query, Schema,
+                 variables: %{
+                   "walletType" => "AUD"
+                 },
+                 context: %{
+                   current_user: updated_user
+                 }
+               )
 
       assert data["id"] === wallet["id"]
       assert data["type"] === wallet["type"]
@@ -91,14 +95,21 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
 
     test "a user can get all of his wallets", %{user: user} do
-      {:ok, wallet} = WalletFactory.build_param_map(%{user_id: user.id})
-      |> Wallets.create()
-      {:ok, wallet2} = WalletFactory.build_param_map(%{user_id: user.id, type: "RAN"})
-      |> Wallets.create()
+      {:ok, wallet} =
+        WalletFactory.build_param_map(%{user_id: user.id})
+        |> Wallets.create()
 
-      assert {:ok, %{data: %{"getWallets" => data}}} = Absinthe.run(@all_wallets_query, Schema, context: %{
-        current_user: user
-      })
+      {:ok, wallet2} =
+        WalletFactory.build_param_map(%{user_id: user.id, type: "RAN"})
+        |> Wallets.create()
+
+      assert {:ok, %{data: %{"getWallets" => data}}} =
+               Absinthe.run(@all_wallets_query, Schema,
+                 context: %{
+                   current_user: user
+                 }
+               )
+
       assert length(data) === 2
       assert String.to_integer(List.first(data)["id"]) === wallet.id
       assert String.to_integer(List.last(data)["id"]) === wallet2.id
@@ -119,9 +130,13 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   """
   describe "@Wallet - Currencies" do
     test "a user can get the list of accepted currencies", %{user: user} do
-      assert {:ok, %{data: %{"getCurrencies" => data}}} = Absinthe.run(@currencies_query, Schema, context: %{
-        current_user: user
-      })
+      assert {:ok, %{data: %{"getCurrencies" => data}}} =
+               Absinthe.run(@currencies_query, Schema,
+                 context: %{
+                   current_user: user
+                 }
+               )
+
       expected_result = %{"value" => "AED", "label" => "United Arab Emirates Dirham"}
 
       assert List.first(data) == expected_result
@@ -141,18 +156,22 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   """
   describe "@Wallet - Deletion:" do
     test "a user can delete his wallet", %{user: user} do
-      {:ok, wallet} = WalletFactory.build_param_map(%{user_id: user.id})
-      |> Wallets.create()
+      {:ok, wallet} =
+        WalletFactory.build_param_map(%{user_id: user.id})
+        |> Wallets.create()
+
       updated_user = Accounts.get_user(user.id)
 
-      {:ok, %{data: %{"deleteWallet" => data}}} = Absinthe.run(@delete_wallet_mutation, Schema, [
-        context: %{
-          current_user: updated_user
-        },
-        variables: %{
-          "id" => wallet.id
-        }
-      ])
+      {:ok, %{data: %{"deleteWallet" => data}}} =
+        Absinthe.run(@delete_wallet_mutation, Schema,
+          context: %{
+            current_user: updated_user
+          },
+          variables: %{
+            "id" => wallet.id
+          }
+        )
+
       assert data["message"] === "Wallet deleted."
     end
 
@@ -170,16 +189,20 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   }
   """
   describe "@Wallet - Transfer:" do
-
     test "a user can transfer an amount to another user of the same currency", %{user: user} do
-      {:ok, wallet} = WalletFactory.build_param_map(%{user_id: user.id})
-      |> Wallets.create()
+      {:ok, wallet} =
+        WalletFactory.build_param_map(%{user_id: user.id})
+        |> Wallets.create()
 
-      {:ok, receiver} = UserFactory.build_param_map(%{email: "mail@exam.com"}) |> Accounts.create_user()
-      {:ok, receiver_wallet} = WalletFactory.build_param_map(%{user_id: receiver.id})
-      |> Wallets.create()
+      {:ok, receiver} =
+        UserFactory.build_param_map(%{email: "mail@exam.com"}) |> Accounts.create_user()
+
+      {:ok, receiver_wallet} =
+        WalletFactory.build_param_map(%{user_id: receiver.id})
+        |> Wallets.create()
 
       updated_user_with_wallet = Accounts.get_user(user.id)
+
       update_mutation = """
       mutation updateWallet($input: WalletUpdateType!) {
         updateWallet(input: $input) {
@@ -188,32 +211,36 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
       }
       """
 
-      {:ok, %{data: %{"updateWallet" => wallet_update_response}}} = Absinthe.run(update_mutation, Schema, [
-        variables: %{
-          "input" => %{
-            "id" => wallet.id,
-            "amount" => 100.00,
+      {:ok, %{data: %{"updateWallet" => wallet_update_response}}} =
+        Absinthe.run(update_mutation, Schema,
+          variables: %{
+            "input" => %{
+              "id" => wallet.id,
+              "amount" => 100.00
+            }
+          },
+          context: %{
+            current_user: updated_user_with_wallet
           }
-        },
-        context: %{
-          current_user: updated_user_with_wallet
-        }
-      ])
-      assert wallet_update_response["amount"] ===  100.00
+        )
+
+      assert wallet_update_response["amount"] === 100.00
 
       updated_user_with_bal = Accounts.get_user(user.id)
-      assert {:ok, %{data: %{"processTransferRequest" => _data}}} = Absinthe.run(@wallet_transfer_mutation, Schema, [
-        variables: %{
-          "input" => %{
-            "requested_amount" => 50.00,
-            "user_id" => receiver.id,
-            "wallet_type" => "USD"
-          }
-        },
-        context: %{
-          current_user: updated_user_with_bal
-        }
-      ])
+
+      assert {:ok, %{data: %{"processTransferRequest" => _data}}} =
+               Absinthe.run(@wallet_transfer_mutation, Schema,
+                 variables: %{
+                   "input" => %{
+                     "requested_amount" => 50.00,
+                     "user_id" => receiver.id,
+                     "wallet_type" => "USD"
+                   }
+                 },
+                 context: %{
+                   current_user: updated_user_with_bal
+                 }
+               )
 
       updated_receiver_wallet = Wallets.get_by_id(receiver_wallet.id)
       assert updated_receiver_wallet.amount === 50.00
@@ -222,28 +249,37 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
       assert updated_wallet.amount === 50.00
     end
 
-    test "a user cannot transfer an amount to another user if they dont have the same currency", %{user: user} do
-      {:ok, receiver} = UserFactory.build_param_map(%{email: "mail@exam.com"}) |> Accounts.create_user()
-      {:ok, _receiver_wallet} = WalletFactory.build_param_map(%{user_id: receiver.id, type: "AUD"})
-      |> Wallets.create()
+    test "a user cannot transfer an amount to another user if they dont have the same currency",
+         %{user: user} do
+      {:ok, receiver} =
+        UserFactory.build_param_map(%{email: "mail@exam.com"}) |> Accounts.create_user()
 
-      {:ok, _wallet} = WalletFactory.build_param_map(%{user_id: user.id})
-      |> Wallets.create()
+      {:ok, _receiver_wallet} =
+        WalletFactory.build_param_map(%{user_id: receiver.id, type: "AUD"})
+        |> Wallets.create()
+
+      {:ok, _wallet} =
+        WalletFactory.build_param_map(%{user_id: user.id})
+        |> Wallets.create()
+
       updated_user_with_wallet = Accounts.get_user(user.id)
 
-      assert {:ok, %{errors: errors}} = Absinthe.run(@wallet_transfer_mutation, Schema, [
-        variables: %{
-          "input" => %{
-            "requested_amount" => 50.00,
-            "user_id" => receiver.id,
-            "wallet_type" => "USD"
-          }
-        },
-        context: %{
-          current_user: updated_user_with_wallet
-        }
-      ])
-      assert List.first(errors).message === "Recipient or sender has no wallet with matching currency found."
+      assert {:ok, %{errors: errors}} =
+               Absinthe.run(@wallet_transfer_mutation, Schema,
+                 variables: %{
+                   "input" => %{
+                     "requested_amount" => 50.00,
+                     "user_id" => receiver.id,
+                     "wallet_type" => "USD"
+                   }
+                 },
+                 context: %{
+                   current_user: updated_user_with_wallet
+                 }
+               )
+
+      assert List.first(errors).message ===
+               "Recipient or sender has no wallet with matching currency found."
     end
 
     test "a user cannot transfer an amount while being unauthenticated" do
@@ -258,7 +294,9 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   end
 
   defp make_unathenticated_request(absinthe_doc, key, variables \\ %{}) do
-    assert {:ok, %{data: data, errors: errors}} = Absinthe.run(absinthe_doc, Schema, variables: variables)
+    assert {:ok, %{data: data, errors: errors}} =
+             Absinthe.run(absinthe_doc, Schema, variables: variables)
+
     assert List.first(errors).message === @authentication_error_msg
     assert data[key] === nil
   end

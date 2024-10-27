@@ -19,7 +19,7 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
   """
   def build_context(conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-        {:ok, current_user} <- authorize(token) do
+         {:ok, current_user} <- authorize(token) do
       %{current_user: current_user}
     else
       _ -> %{}
@@ -28,14 +28,17 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
 
   defp authorize(token) do
     case Utils.AuthToken.verify(token) do
-      {:ok, user_id} -> User
+      {:ok, user_id} ->
+        User
         |> Repo.get(user_id)
         |> Repo.preload([:curriences])
         |> case do
           nil -> {:error, "invalid authorization token"}
           user -> {:ok, user}
         end
-      {:error, _reason} -> {:error, "invalid authorization token"}
+
+      {:error, _reason} ->
+        {:error, "invalid authorization token"}
     end
   end
 end

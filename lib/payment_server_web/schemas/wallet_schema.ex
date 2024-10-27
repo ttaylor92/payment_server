@@ -8,7 +8,6 @@ defmodule PaymentServerWeb.Schemas.WalletSchema do
   import_types(Types.WalletType)
 
   object :wallet_queries do
-
     @desc "Get a user's wallet"
     field :get_wallet, type: :wallet_type do
       arg(:wallet_type, non_null(:string))
@@ -27,7 +26,6 @@ defmodule PaymentServerWeb.Schemas.WalletSchema do
   end
 
   object :wallet_mutations do
-
     @desc "Create a user wallet"
     field :create_wallet, type: :wallet_type do
       arg(:type, non_null(:string))

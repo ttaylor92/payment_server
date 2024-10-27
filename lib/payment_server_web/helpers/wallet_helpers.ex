@@ -10,6 +10,7 @@ defmodule PaymentServerWeb.WalletHelpers do
     file_path = Path.join([root_dir, "priv", "data", "physical_currency_list.csv"])
 
     file_content = file_reader.(file_path)
+
     file_content
     |> csv_parser.()
     |> Enum.map(fn [column1, column2] ->
@@ -33,7 +34,12 @@ defmodule PaymentServerWeb.WalletHelpers do
   @doc """
   Fetches the exchange rate between two currencies.
   """
-  def get_exchange_rate(currency_to, currency_from, display_error, api_client \\ PaymentServer.ExternalApiClient)
+  def get_exchange_rate(
+        currency_to,
+        currency_from,
+        display_error,
+        api_client \\ PaymentServer.ExternalApiClient
+      )
 
   def get_exchange_rate(currency_to, currency_from, true, api_client) do
     case api_client.get_currency(currency_to, currency_from) do
@@ -44,8 +50,15 @@ defmodule PaymentServerWeb.WalletHelpers do
 
   def get_exchange_rate(currency_to, currency_from, false, api_client) do
     case api_client.get_currency(currency_to, currency_from) do
-      {:ok, result} -> %{currency_from: currency_from, currency_to: currency_to, rate: String.to_float(result.exchange_rate)}
-      {:error, _} -> %{currency_from: currency_from, currency_to: currency_to, rate: 0}
+      {:ok, result} ->
+        %{
+          currency_from: currency_from,
+          currency_to: currency_to,
+          rate: String.to_float(result.exchange_rate)
+        }
+
+      {:error, _} ->
+        %{currency_from: currency_from, currency_to: currency_to, rate: 0}
     end
   end
 
@@ -64,44 +77,68 @@ defmodule PaymentServerWeb.WalletHelpers do
   @doc """
   Gets the total worth of a user's wallets in their default currency.
   """
-  def get_total_worth(user_id, accounts \\ Accounts, api_client \\ PaymentServer.ExternalApiClient) do
+  def get_total_worth(
+        user_id,
+        accounts \\ Accounts,
+        api_client \\ PaymentServer.ExternalApiClient
+      ) do
     case get_user(user_id, accounts) do
       {:ok, %PaymentServer.Accounts.User{} = user} ->
-        result = user.curriences
-        |> Task.async_stream(
-          &fetch_exchange_and_returned_converted_value(&1, user.default_currency, api_client),
-          max_concurrency: 10,
-          timeout: 5000
-        )
-        |> Enum.reduce({:ok, 0}, fn
-          {:ok, converted_value}, {:ok, acc} when is_number(converted_value) ->
-            {:ok, acc + converted_value}
-          {:error, _} = error, {:ok, _acc} -> error
-          _other, {:ok, _acc} ->
-            {:error, message: "Unexpected result format!"}
-        end)
+        result =
+          user.curriences
+          |> Task.async_stream(
+            &fetch_exchange_and_returned_converted_value(&1, user.default_currency, api_client),
+            max_concurrency: 10,
+            timeout: 5000
+          )
+          |> Enum.reduce({:ok, 0}, fn
+            {:ok, converted_value}, {:ok, acc} when is_number(converted_value) ->
+              {:ok, acc + converted_value}
+
+            {:error, _} = error, {:ok, _acc} ->
+              error
+
+            _other, {:ok, _acc} ->
+              {:error, message: "Unexpected result format!"}
+          end)
 
         case result do
-          {:ok, value} -> Absinthe.Subscription.publish(
-              PaymentServerWeb.Endpoint, %{amount: value, default_currency: user.default_currency}, total_worth_update: user_id
+          {:ok, value} ->
+            Absinthe.Subscription.publish(
+              PaymentServerWeb.Endpoint,
+              %{amount: value, default_currency: user.default_currency},
+              total_worth_update: user_id
             )
-          {:error, message} -> {:error, message}
+
+          {:error, message} ->
+            {:error, message}
         end
-      {:error, _reason} -> {:error, message: "User does not exist."}
+
+      {:error, _reason} ->
+        {:error, message: "User does not exist."}
     end
   end
 
   @doc """
   Publishes a currency update.
   """
-  def get_currency_update(currency_to, default_currency \\ "USD", api_client \\ PaymentServer.ExternalApiClient) do
+  def get_currency_update(
+        currency_to,
+        default_currency \\ "USD",
+        api_client \\ PaymentServer.ExternalApiClient
+      ) do
     topic = "currency:#{currency_to}"
 
     case get_exchange_rate(currency_to, default_currency, true, api_client) do
-      {:ok, value} -> Absinthe.Subscription.publish(
-          PaymentServerWeb.Endpoint, %{amount: value, default_currency: default_currency}, currency_update: topic
+      {:ok, value} ->
+        Absinthe.Subscription.publish(
+          PaymentServerWeb.Endpoint,
+          %{amount: value, default_currency: default_currency},
+          currency_update: topic
         )
-      {:error, _} -> {:error, message: "Unable to fetch update for: #{currency_to}"}
+
+      {:error, _} ->
+        {:error, message: "Unable to fetch update for: #{currency_to}"}
     end
   end
 
@@ -109,12 +146,13 @@ defmodule PaymentServerWeb.WalletHelpers do
   Publishes updates for all currencies.
   """
   def get_all_currency_updates(
-    default_currency \\ "USD",
-    api_client \\ PaymentServer.ExternalApiClient,
-    file_reader \\ &File.read!/1,
-    csv_parser \\ &CSV.parse_string/1
-    ) do
-    results = fetch_accepted_currencies(file_reader, csv_parser)
+        default_currency \\ "USD",
+        api_client \\ PaymentServer.ExternalApiClient,
+        file_reader \\ &File.read!/1,
+        csv_parser \\ &CSV.parse_string/1
+      ) do
+    results =
+      fetch_accepted_currencies(file_reader, csv_parser)
       |> Task.async_stream(
         &get_exchange_rate(&1.value, default_currency, false, api_client),
         max_concurrency: 10,
@@ -125,8 +163,10 @@ defmodule PaymentServerWeb.WalletHelpers do
         {:error, _reason}, acc -> acc
       end)
 
-      Absinthe.Subscription.publish(
-        PaymentServerWeb.Endpoint, results, all_currencies_update: "all_currencies"
-      )
+    Absinthe.Subscription.publish(
+      PaymentServerWeb.Endpoint,
+      results,
+      all_currencies_update: "all_currencies"
+    )
   end
 end

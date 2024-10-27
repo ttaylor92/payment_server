@@ -31,7 +31,9 @@ defmodule PaymentServer.ExternalApiClient do
       }}
   """
   def get_currency(to_currency_code, from_currency_code \\ "USD") do
-    url = "#{@api_base_url}/query?function=CURRENCY_EXCHANGE_RATE&from_currency=#{from_currency_code}&to_currency=#{to_currency_code}"
+    url =
+      "#{@api_base_url}/query?function=CURRENCY_EXCHANGE_RATE&from_currency=#{from_currency_code}&to_currency=#{to_currency_code}"
+
     case get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Jason.decode(body) do
@@ -39,7 +41,8 @@ defmodule PaymentServer.ExternalApiClient do
           {:error, reason} -> {:error, reason}
         end
 
-      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} when status_code in 400..499 ->
+      {:ok, %HTTPoison.Response{status_code: status_code, body: body}}
+      when status_code in 400..499 ->
         {:error, body}
 
       {:error, %HTTPoison.Error{reason: reason}} ->
@@ -78,14 +81,16 @@ defmodule PaymentServer.ExternalApiClient do
   """
   def transform_keys(%{"Realtime Currency Exchange Rate" => rate_data}) do
     rate_data
-      |> Enum.map(fn {key, value} ->
-        new_key = key
-          |> String.replace(~r/^\d+\. /, "")
-          |> String.replace(~r/\s/, "_")
-          |> String.downcase()
-        {String.to_atom(new_key), value}
-      end)
-      |> Enum.into(%{})
+    |> Enum.map(fn {key, value} ->
+      new_key =
+        key
+        |> String.replace(~r/^\d+\. /, "")
+        |> String.replace(~r/\s/, "_")
+        |> String.downcase()
+
+      {String.to_atom(new_key), value}
+    end)
+    |> Enum.into(%{})
   end
 
   def transform_keys(params) do

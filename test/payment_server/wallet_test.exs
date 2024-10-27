@@ -31,7 +31,7 @@ defmodule PaymentServer.WalletTest do
       currency_attrs = WalletFactory.build_param_map(%{user_id: user.id})
       {:ok, currency} = Wallets.create(currency_attrs)
 
-      assert {:ok, %Currency{} = updated_currency} = Wallets.update(currency, %{ type: "EUR"})
+      assert {:ok, %Currency{} = updated_currency} = Wallets.update(currency, %{type: "EUR"})
       assert updated_currency.type == "EUR"
     end
 

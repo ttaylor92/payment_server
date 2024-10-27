@@ -22,9 +22,9 @@ defmodule PaymentServer.WalletHistory.TransactionHistory do
   @doc false
   def changeset(transaction_history = %PaymentServer.WalletHistory.TransactionHistory{}, attrs) do
     transaction_history
-      |> cast(attrs, @available_params)
-      |> validate_required(@required_params)
-      |> validate_number(:amount, greater_than: 0)
-      |> validate_inclusion(:type, @accepted_types)
+    |> cast(attrs, @available_params)
+    |> validate_required(@required_params)
+    |> validate_number(:amount, greater_than: 0)
+    |> validate_inclusion(:type, @accepted_types)
   end
 end

@@ -1,5 +1,4 @@
 defmodule PaymentServer.WalletHistory do
-
   import Ecto.Query, warn: false
   alias PaymentServer.Repo
 
@@ -23,8 +22,8 @@ defmodule PaymentServer.WalletHistory do
   """
   def create(params \\ %{}, options \\ []) do
     params
-      |> TransactionHistory.create_changeset()
-      |> Repo.insert(options)
+    |> TransactionHistory.create_changeset()
+    |> Repo.insert(options)
   end
 
   @doc """
@@ -42,8 +41,8 @@ defmodule PaymentServer.WalletHistory do
   """
   def update(wallet_history, params) do
     wallet_history
-      |> TransactionHistory.changeset(params)
-      |> Repo.update()
+    |> TransactionHistory.changeset(params)
+    |> Repo.update()
   end
 
   @doc """
@@ -88,6 +87,6 @@ defmodule PaymentServer.WalletHistory do
   """
   def get_by_wallet_id(id) do
     from(wh in TransactionHistory, where: wh.currency_id == ^id)
-      |> Repo.all()
+    |> Repo.all()
   end
 end

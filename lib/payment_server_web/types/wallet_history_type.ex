@@ -15,8 +15,8 @@ defmodule PaymentServerWeb.Types.WalletHistory do
   end
 
   input_object :history_input_type do
-    field :amount,  non_null(:integer)
-    field :type,  non_null(:transaction_type)
-    field :currency_id,  non_null(:integer)
+    field :amount, non_null(:integer)
+    field :type, non_null(:transaction_type)
+    field :currency_id, non_null(:integer)
   end
 end

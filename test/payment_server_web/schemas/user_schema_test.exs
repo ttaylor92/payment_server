@@ -26,20 +26,27 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   }
   """
   describe "@User - Sign In:" do
-
     test "a user can sign in" do
-      assert {:ok, %{data: %{"signIn" => data}}} = Absinthe.run(@authentication_mutation, Schema, variables: %{
-        "email"=> "user@example.com",
-        "password"=> "secret"
-      })
+      assert {:ok, %{data: %{"signIn" => data}}} =
+               Absinthe.run(@authentication_mutation, Schema,
+                 variables: %{
+                   "email" => "user@example.com",
+                   "password" => "secret"
+                 }
+               )
+
       assert Map.has_key?(data, "token") === true
     end
 
     test "a user cannot sign in with incorrect credentials" do
-      assert {:ok, %{errors: errors}} = Absinthe.run(@authentication_mutation, Schema, variables: %{
-        "email"=> "user1@example.com",
-        "password"=> "secret"
-      })
+      assert {:ok, %{errors: errors}} =
+               Absinthe.run(@authentication_mutation, Schema,
+                 variables: %{
+                   "email" => "user1@example.com",
+                   "password" => "secret"
+                 }
+               )
+
       assert List.first(errors).message === "Signin failed!"
     end
   end
@@ -60,14 +67,16 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
     end
 
     test "a user can update his account", %{user: user} do
-      assert {:ok, %{data: %{"updateUser" => updated_user}}} = Absinthe.run(@update_user_mutation, Schema, [
-        context: %{
-          current_user: user
-        },
-        variables: %{
-          "input" => @update_params
-        }
-      ])
+      assert {:ok, %{data: %{"updateUser" => updated_user}}} =
+               Absinthe.run(@update_user_mutation, Schema,
+                 context: %{
+                   current_user: user
+                 },
+                 variables: %{
+                   "input" => @update_params
+                 }
+               )
+
       assert updated_user["firstName"] === @update_params["first_name"]
     end
   end
@@ -82,18 +91,23 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   """
   describe "@User - Registration:" do
     test "a user can be registered" do
-      assert {:ok, %{data: %{"registerUser"=> result}}} = Absinthe.run(@registration_mutation, Schema,
-        variables: %{
-          "input" => @valid_user_params
-        }
-      )
+      assert {:ok, %{data: %{"registerUser" => result}}} =
+               Absinthe.run(@registration_mutation, Schema,
+                 variables: %{
+                   "input" => @valid_user_params
+                 }
+               )
+
       assert result["email"] == @valid_user_params["email"]
     end
 
     test "a user cannot be registered with invalid data" do
-      assert {:ok, %{errors: errors}} = Absinthe.run(@registration_mutation, Schema, variables: %{
-        "input" => %{@valid_user_params | "password_confirmation" => "random"}
-      })
+      assert {:ok, %{errors: errors}} =
+               Absinthe.run(@registration_mutation, Schema,
+                 variables: %{
+                   "input" => %{@valid_user_params | "password_confirmation" => "random"}
+                 }
+               )
 
       assert List.first(errors).message === "User creation failed!"
     end
@@ -116,9 +130,13 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   """
   describe "@User - Get User Information" do
     test "a user can get all users", %{user: user} do
-      assert {:ok, %{data: %{"getAllUsers" => data}}} = Absinthe.run(@all_users_query, Schema, context: %{
-        current_user: user
-      })
+      assert {:ok, %{data: %{"getAllUsers" => data}}} =
+               Absinthe.run(@all_users_query, Schema,
+                 context: %{
+                   current_user: user
+                 }
+               )
+
       assert String.to_integer(List.first(data)["id"]) === user.id
     end
 
@@ -131,9 +149,13 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
     end
 
     test "a user can get his account information", %{user: user} do
-      assert {:ok, %{data: %{"getAUser" => data}}} = Absinthe.run(@get_a_user_query, Schema, context: %{
-        current_user: user
-      })
+      assert {:ok, %{data: %{"getAUser" => data}}} =
+               Absinthe.run(@get_a_user_query, Schema,
+                 context: %{
+                   current_user: user
+                 }
+               )
+
       assert String.to_integer(data["id"]) === user.id
       assert data["firstName"] === user.first_name
     end
@@ -148,16 +170,20 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
       }
       """
 
-      {:ok, user2} = %{UserFactory.build_param_map() | email: "random@email.com"}
+      {:ok, user2} =
+        %{UserFactory.build_param_map() | email: "random@email.com"}
         |> Accounts.create_user()
-      assert {:ok, %{data: %{"getAUser" => data}}} = Absinthe.run(query, Schema, [
-        context: %{
-          current_user: user
-        },
-        variables: %{
-          "id" => user2.id
-        }
-      ])
+
+      assert {:ok, %{data: %{"getAUser" => data}}} =
+               Absinthe.run(query, Schema,
+                 context: %{
+                   current_user: user
+                 },
+                 variables: %{
+                   "id" => user2.id
+                 }
+               )
+
       assert String.to_integer(data["id"]) === user2.id
       assert data["firstName"] === user2.first_name
     end
@@ -176,16 +202,29 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
     end
 
     test "a user can delete his account", %{user: user} do
-      assert {:ok, %{data: %{"getAllUsers" => all_users}}} = Absinthe.run(@all_users_query, Schema, context: %{
-        current_user: user
-      })
+      assert {:ok, %{data: %{"getAllUsers" => all_users}}} =
+               Absinthe.run(@all_users_query, Schema,
+                 context: %{
+                   current_user: user
+                 }
+               )
+
       assert length(all_users) === 1
-      assert {:ok, %{data: _data}} = Absinthe.run(@delete_user_mutation, Schema, context: %{
-        current_user: user
-      })
-      assert {:ok, %{data: %{"getAllUsers" => all_users}}} = Absinthe.run(@all_users_query, Schema, context: %{
-        current_user: user
-      })
+
+      assert {:ok, %{data: _data}} =
+               Absinthe.run(@delete_user_mutation, Schema,
+                 context: %{
+                   current_user: user
+                 }
+               )
+
+      assert {:ok, %{data: %{"getAllUsers" => all_users}}} =
+               Absinthe.run(@all_users_query, Schema,
+                 context: %{
+                   current_user: user
+                 }
+               )
+
       assert length(all_users) === 0
     end
 
@@ -197,6 +236,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
         }
       }
       """
+
       mutation2 = """
       mutation deleteUser($email: String!) {
         deleteUser(email: $email) {
@@ -205,27 +245,31 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
       }
       """
 
-      assert {:ok, %{errors: errors}} = Absinthe.run(mutation, Schema, [
-        context: %{
-          current_user: user
-        },
-        variables: %{
-          "id" => 100
-        }
-      ])
-      assert String.contains? List.first(errors).message, "Unknown argument \"id\""
-      assert {:ok, %{errors: errors}} = Absinthe.run(mutation2, Schema, [
-        context: %{
-          current_user: user
-        },
-        variables: %{
-          "email" => "random@example.com"
-        }
-      ])
-      assert String.contains? List.first(errors).message, "Unknown argument \"email\""
+      assert {:ok, %{errors: errors}} =
+               Absinthe.run(mutation, Schema,
+                 context: %{
+                   current_user: user
+                 },
+                 variables: %{
+                   "id" => 100
+                 }
+               )
+
+      assert String.contains?(List.first(errors).message, "Unknown argument \"id\"")
+
+      assert {:ok, %{errors: errors}} =
+               Absinthe.run(mutation2, Schema,
+                 context: %{
+                   current_user: user
+                 },
+                 variables: %{
+                   "email" => "random@example.com"
+                 }
+               )
+
+      assert String.contains?(List.first(errors).message, "Unknown argument \"email\"")
     end
   end
-
 
   defp make_unathenticated_request(absinthe_doc, variables \\ %{}) do
     assert {:ok, %{errors: errors}} = Absinthe.run(absinthe_doc, Schema, variables: variables)

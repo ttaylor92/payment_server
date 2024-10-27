@@ -16,7 +16,14 @@ defmodule PaymentServer.Accounts.User do
     timestamps(type: :utc_datetime)
   end
 
-  @available_params [:first_name, :last_name, :email, :password, :password_confirmation, :default_currency]
+  @available_params [
+    :first_name,
+    :last_name,
+    :email,
+    :password,
+    :password_confirmation,
+    :default_currency
+  ]
   @required_params [:first_name, :last_name, :email, :password, :password_confirmation]
 
   @doc false
@@ -33,7 +40,7 @@ defmodule PaymentServer.Accounts.User do
     |> hash_password
   end
 
-  defp hash_password(%Ecto.Changeset{ valid?: true, changes: %{ password: password }} = changeset) do
+  defp hash_password(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
     change(changeset, password_hash: Argon2.hash_pwd_salt(password))
   end
 

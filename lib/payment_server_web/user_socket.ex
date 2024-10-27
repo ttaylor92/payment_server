@@ -12,23 +12,29 @@ defmodule PaymentServerWeb.UserSocket do
     current_user(params)
     |> case do
       {:ok, user} ->
-        socket = Absinthe.Phoenix.Socket.put_options(socket, context: %{ current_user: user })
+        socket = Absinthe.Phoenix.Socket.put_options(socket, context: %{current_user: user})
         {:ok, socket}
-      {:error, message} -> {:error, reason: message}
+
+      {:error, message} ->
+        {:error, reason: message}
     end
   end
 
   def current_user(%{"authorization" => authorization_token}) do
     "Bearer " <> token = authorization_token
+
     case Utils.AuthToken.verify(token) do
-      {:ok, user_id} -> User
+      {:ok, user_id} ->
+        User
         |> Repo.get(user_id)
         |> Repo.preload([:curriences])
         |> case do
           nil -> {:error, message: "Invalid authorization token"}
           user -> {:ok, user}
         end
-      {:error, _reason} -> {:error, message: "Invalid authorization token"}
+
+      {:error, _reason} ->
+        {:error, message: "Invalid authorization token"}
     end
   end
 
