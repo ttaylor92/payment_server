@@ -84,25 +84,23 @@ defmodule PaymentServerWeb.WalletHelpers do
       ) do
     case get_user(user_id, accounts) do
       {:ok, %PaymentServer.Accounts.User{} = user} ->
-        result =
-          user.curriences
-          |> Task.async_stream(
-            &fetch_exchange_and_returned_converted_value(&1, user.default_currency, api_client),
-            max_concurrency: 10,
-            timeout: 5000
-          )
-          |> Enum.reduce({:ok, 0}, fn
-            {:ok, converted_value}, {:ok, acc} when is_number(converted_value) ->
-              {:ok, acc + converted_value}
+        user.curriences
+        |> Task.async_stream(
+          &fetch_exchange_and_returned_converted_value(&1, user.default_currency, api_client),
+          max_concurrency: 10,
+          timeout: 5000
+        )
+        |> Enum.reduce({:ok, 0}, fn
+          {:ok, converted_value}, {:ok, acc} when is_number(converted_value) ->
+            {:ok, acc + converted_value}
 
-            {:error, _} = error, {:ok, _acc} ->
-              error
+          {:error, _} = error, {:ok, _acc} ->
+            error
 
-            _other, {:ok, _acc} ->
-              {:error, message: "Unexpected result format!"}
-          end)
-
-        case result do
+          _other, {:ok, _acc} ->
+            {:error, message: "Unexpected result format!"}
+        end)
+        |> case do
           {:ok, value} ->
             Absinthe.Subscription.publish(
               PaymentServerWeb.Endpoint,

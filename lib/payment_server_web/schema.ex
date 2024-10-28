@@ -1,12 +1,30 @@
 defmodule PaymentServerWeb.Schema do
   use Absinthe.Schema
 
-  alias PaymentServerWeb.{Schemas, Types, Subscriptions}
+  alias PaymentServerWeb.Types
+  alias PaymentServerWeb.Schema.{
+    Queries,
+    Mutations,
+    Subscriptions
+  }
 
-  import_types Schemas.UserSchema
-  import_types Schemas.WalletSchema
   import_types Subscriptions.WalletSubscriptions
-  import_types Types.MiscType
+  import_types Queries.{
+    UserQuery,
+    WalletQuery
+  }
+
+  import_types Mutations.{
+    UserMutation,
+    WalletMutation
+  }
+
+  import_types Types.{
+    MiscType,
+    UserType,
+    SessionType,
+    WalletType
+  }
 
   query do
     import_fields :user_queries

@@ -39,7 +39,9 @@ defmodule PaymentServer.Accounts do
 
   """
   def get_user(id) do
-    Repo.get(User, id) |> Repo.preload([:curriences])
+    User
+    |> Repo.get(id)
+    |> Repo.preload([:curriences])
   end
 
   @doc """
@@ -123,7 +125,9 @@ defmodule PaymentServer.Accounts do
   end
   """
   def authenticate(email, password) do
-    case User |> Repo.get_by(email: email) do
+    User
+    |> Repo.get_by(email: email)
+    |> case do
       nil ->
         {:error, "No Matching account found."}
 

@@ -19,10 +19,10 @@ defmodule PaymentServer.PeriodicTask do
   end
 
   @impl true
-  def handle_info(:work, _state) do
+  def handle_info(:work, state) do
     check_and_process_subscriptions()
     schedule_work()
-    {:noreply, %{}}
+    {:noreply, state}
   end
 
   defp schedule_work() do
@@ -39,11 +39,9 @@ defmodule PaymentServer.PeriodicTask do
   end
 
   defp check_currency_subscriptions() do
-    currencies =
-      WalletHelpers.fetch_accepted_currencies()
-      |> Enum.map(fn currency_map -> currency_map.value end)
-
-    Enum.each(currencies, fn currency ->
+    WalletHelpers.fetch_accepted_currencies()
+    |> Enum.map(fn currency_map -> currency_map.value end)
+    |> Enum.each(fn currency ->
       Task.start(fn -> WalletHelpers.get_currency_update(currency) end)
     end)
   end

@@ -73,7 +73,9 @@ defmodule PaymentServer.Wallets do
     * Currency | nil - The retrieved Currency struct or nil if not found.
   """
   def get_by_id(id) do
-    Repo.get(Currency, id) |> Repo.preload([:user, :transaction])
+    Currency
+    |> Repo.get(id)
+    |> Repo.preload([:user, :transaction])
   end
 
   @doc """

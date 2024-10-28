@@ -11,6 +11,10 @@ config :payment_server,
   ecto_repos: [PaymentServer.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# config :ecto_shorts,
+#   repo: PaymentServer.Repo,
+#   error_module: EctoShorts.Actions.Error
+
 # Configures the endpoint
 config :payment_server, PaymentServerWeb.Endpoint,
   url: [host: "localhost"],

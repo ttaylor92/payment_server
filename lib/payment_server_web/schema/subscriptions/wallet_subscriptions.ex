@@ -1,4 +1,4 @@
-defmodule PaymentServerWeb.Subscriptions.WalletSubscriptions do
+defmodule PaymentServerWeb.Schema.Subscriptions.WalletSubscriptions do
   use Absinthe.Schema.Notation
 
   @subscribe_message "Subscribe to recieve 1 minute updates for"

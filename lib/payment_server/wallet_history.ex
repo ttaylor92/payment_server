@@ -73,7 +73,9 @@ defmodule PaymentServer.WalletHistory do
     * WalletHistory | nil - The retrieved WalletHistory struct or nil if no record is found with the given ID.
   """
   def get_by_id(id) do
-    Repo.get(TransactionHistory, id) |> Repo.preload([:user, :currency])
+    TransactionHistory
+    |> Repo.get(id)
+    |> Repo.preload([:user, :currency])
   end
 
   @doc """
