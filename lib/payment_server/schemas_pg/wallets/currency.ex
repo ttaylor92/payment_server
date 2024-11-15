@@ -1,12 +1,12 @@
-defmodule PaymentServer.Wallets.Currency do
+defmodule PaymentServer.SchemasPg.Wallets.Currency do
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "currencies" do
     field :type, :string
     field :amount, :float
-    belongs_to :user, PaymentServer.Accounts.User
-    has_many :transaction, PaymentServer.WalletHistory.TransactionHistory
+    belongs_to :user, PaymentServer.SchemasPg.Accounts.User
+    has_many :transaction, PaymentServer.SchemasPg.WalletHistory.TransactionHistory
 
     timestamps(type: :utc_datetime)
   end

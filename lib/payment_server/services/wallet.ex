@@ -1,5 +1,6 @@
-defmodule PaymentServerWeb.WalletHelpers do
-  alias PaymentServer.Accounts
+defmodule PaymentServer.Services.WalletService do
+  alias PaymentServer.SchemasPg.Accounts
+  alias PaymentServer.Services.ExternalApiService
   alias NimbleCSV.RFC4180, as: CSV
 
   @doc """
@@ -24,8 +25,8 @@ defmodule PaymentServerWeb.WalletHelpers do
   @doc """
   Gets a user by user_id.
   """
-  def get_user(user_id, accounts \\ Accounts) do
-    case accounts.get_user(user_id) do
+  def get_user(user_id) do
+    case Accounts.get_user(user_id) do
       nil -> {:error, :user_not_found}
       user -> {:ok, user}
     end
@@ -38,12 +39,12 @@ defmodule PaymentServerWeb.WalletHelpers do
         currency_to,
         currency_from,
         display_error,
-        api_client \\ PaymentServer.ExternalApiClient
+        api_client \\ ExternalApiService
       )
 
   def get_exchange_rate(currency_to, currency_from, true, api_client) do
     case api_client.get_currency(currency_to, currency_from) do
-      {:ok, result} -> {:ok, String.to_float(result.exchange_rate)}
+      {:ok, result} -> {:ok, String.to_float(result["exchange_rate"])}
       {:error, _} -> {:error, :exchange_rate_not_found}
     end
   end
@@ -54,7 +55,7 @@ defmodule PaymentServerWeb.WalletHelpers do
         %{
           currency_from: currency_from,
           currency_to: currency_to,
-          rate: String.to_float(result.exchange_rate)
+          rate: String.to_float(result["exchange_rate"])
         }
 
       {:error, _} ->
@@ -79,11 +80,10 @@ defmodule PaymentServerWeb.WalletHelpers do
   """
   def get_total_worth(
         user_id,
-        accounts \\ Accounts,
-        api_client \\ PaymentServer.ExternalApiClient
+        api_client \\ ExternalApiService
       ) do
-    case get_user(user_id, accounts) do
-      {:ok, %PaymentServer.Accounts.User{} = user} ->
+    case get_user(user_id) do
+      {:ok, %PaymentServer.SchemasPg.Accounts.User{} = user} ->
         user.curriences
         |> Task.async_stream(
           &fetch_exchange_and_returned_converted_value(&1, user.default_currency, api_client),
@@ -123,7 +123,7 @@ defmodule PaymentServerWeb.WalletHelpers do
   def get_currency_update(
         currency_to,
         default_currency \\ "USD",
-        api_client \\ PaymentServer.ExternalApiClient
+        api_client \\ ExternalApiService
       ) do
     topic = "currency:#{currency_to}"
 
@@ -145,7 +145,7 @@ defmodule PaymentServerWeb.WalletHelpers do
   """
   def get_all_currency_updates(
         default_currency \\ "USD",
-        api_client \\ PaymentServer.ExternalApiClient,
+        api_client \\ ExternalApiService,
         file_reader \\ &File.read!/1,
         csv_parser \\ &CSV.parse_string/1
       ) do

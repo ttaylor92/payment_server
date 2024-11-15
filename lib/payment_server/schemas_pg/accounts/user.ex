@@ -1,4 +1,4 @@
-defmodule PaymentServer.Accounts.User do
+defmodule PaymentServer.SchemasPg.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -10,8 +10,8 @@ defmodule PaymentServer.Accounts.User do
     field :password_hash, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :password_confirmation, :string, virtual: true, redact: true
-    has_many :transactions, PaymentServer.WalletHistory.TransactionHistory
-    has_many :curriences, PaymentServer.Wallets.Currency
+    has_many :transactions, PaymentServer.SchemasPg.WalletHistory.TransactionHistory
+    has_many :curriences, PaymentServer.SchemasPg.Wallets.Currency
 
     timestamps(type: :utc_datetime)
   end

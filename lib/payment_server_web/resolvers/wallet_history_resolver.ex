@@ -1,5 +1,5 @@
 defmodule PaymentServerWeb.Resolvers.WalletHistoryResolver do
-  alias PaymentServer.WalletHistory
+  alias PaymentServer.SchemasPg.WalletHistory
 
   def create_wallet_history(_, %{input: input}, %{context: %{current_user: current_user}}) do
     Map.update(input, :user_id, current_user.id, fn val -> val end)

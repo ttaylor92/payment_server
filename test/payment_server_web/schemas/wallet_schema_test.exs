@@ -10,8 +10,8 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   @authentication_error_msg "Unauthenticated!!!"
 
   @create_wallet_mutation """
-  mutation createWallet($type: String!) {
-    createWallet(type: $type) {
+  mutation walletCreate($type: String!) {
+    walletCreate(type: $type) {
       id
       type
       user {
@@ -22,7 +22,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   """
   describe "@Wallet - Wallet Creation" do
     test "a user can create a wallet", %{user: user} do
-      assert {:ok, %{data: %{"createWallet" => data}}} =
+      assert {:ok, %{data: %{"walletCreate" => data}}} =
                Absinthe.run(@create_wallet_mutation, Schema,
                  variables: %{
                    "type" => "AUD"
@@ -37,13 +37,13 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
 
     test "a user cannot create a wallet when unauthenticated" do
-      make_unathenticated_request(@create_wallet_mutation, "createWallet", %{"type" => "AUD"})
+      make_unathenticated_request(@create_wallet_mutation, "walletCreate", %{"type" => "AUD"})
     end
   end
 
   @wallet_query """
-    query getWallet($walletType: String!) {
-      getWallet(walletType: $walletType) {
+    query wallet($walletType: String!) {
+      wallet(walletType: $walletType) {
         id
         type
         user {
@@ -55,7 +55,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   """
   @all_wallets_query """
   query {
-    getWallets {
+    wallets {
       id
       type
     }
@@ -63,7 +63,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   """
   describe "@Wallet - Get Wallet/s:" do
     test "a user can get his wallet", %{user: user} do
-      assert {:ok, %{data: %{"createWallet" => wallet}}} =
+      assert {:ok, %{data: %{"walletCreate" => wallet}}} =
                Absinthe.run(@create_wallet_mutation, Schema,
                  variables: %{
                    "type" => "AUD"
@@ -75,7 +75,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
 
       updated_user = Accounts.get_user(user.id)
 
-      assert {:ok, %{data: %{"getWallet" => data}}} =
+      assert {:ok, %{data: %{"wallet" => data}}} =
                Absinthe.run(@wallet_query, Schema,
                  variables: %{
                    "walletType" => "AUD"
@@ -91,7 +91,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
 
     test "a user cannot get his wallet when unauthenticated" do
-      make_unathenticated_request(@wallet_query, "getWallet", %{"walletType" => "USD"})
+      make_unathenticated_request(@wallet_query, "wallet", %{"walletType" => "USD"})
     end
 
     test "a user can get all of his wallets", %{user: user} do
@@ -103,7 +103,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
         WalletFactory.build_param_map(%{user_id: user.id, type: "RAN"})
         |> Wallets.create()
 
-      assert {:ok, %{data: %{"getWallets" => data}}} =
+      assert {:ok, %{data: %{"wallets" => data}}} =
                Absinthe.run(@all_wallets_query, Schema,
                  context: %{
                    current_user: user
@@ -121,8 +121,8 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   end
 
   @currencies_query """
-    query getCurrencies {
-      getCurrencies {
+    query currencies {
+      currencies {
         label
         value
       }
@@ -130,7 +130,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   """
   describe "@Wallet - Currencies" do
     test "a user can get the list of accepted currencies", %{user: user} do
-      assert {:ok, %{data: %{"getCurrencies" => data}}} =
+      assert {:ok, %{data: %{"currencies" => data}}} =
                Absinthe.run(@currencies_query, Schema,
                  context: %{
                    current_user: user
@@ -143,13 +143,13 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
 
     test "a user cannot get the list of accepted currencies when unauthenticated" do
-      make_unathenticated_request(@currencies_query, "getCurrencies")
+      make_unathenticated_request(@currencies_query, "currencies")
     end
   end
 
   @delete_wallet_mutation """
-  mutation deleteWallet($id: ID!) {
-    deleteWallet(id: $id) {
+  mutation walletDelete($id: ID!) {
+    walletDelete(id: $id) {
       message
     }
   }
@@ -162,7 +162,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
 
       updated_user = Accounts.get_user(user.id)
 
-      {:ok, %{data: %{"deleteWallet" => data}}} =
+      {:ok, %{data: %{"walletDelete" => data}}} =
         Absinthe.run(@delete_wallet_mutation, Schema,
           context: %{
             current_user: updated_user
@@ -176,7 +176,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
 
     test "a user cannot delete a wallet while being unauthenticated" do
-      make_unathenticated_request(@delete_wallet_mutation, "deleteWallet", %{"id" => 20})
+      make_unathenticated_request(@delete_wallet_mutation, "walletDelete", %{"id" => 20})
     end
   end
 
@@ -204,14 +204,14 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
       updated_user_with_wallet = Accounts.get_user(user.id)
 
       update_mutation = """
-      mutation updateWallet($input: WalletUpdateType!) {
-        updateWallet(input: $input) {
+      mutation walletUpdate($input: WalletUpdateType!) {
+        walletUpdate(input: $input) {
           amount
         }
       }
       """
 
-      {:ok, %{data: %{"updateWallet" => wallet_update_response}}} =
+      {:ok, %{data: %{"walletUpdate" => wallet_update_response}}} =
         Absinthe.run(update_mutation, Schema,
           variables: %{
             "input" => %{

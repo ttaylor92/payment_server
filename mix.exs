@@ -52,7 +52,8 @@ defmodule PaymentServer.MixProject do
       {:argon2_elixir, "~> 4.0"},
       {:httpoison, "~> 2.2"},
       {:nimble_csv, "~> 1.1"},
-      {:factory_ex, "~> 0.1.0"}
+      {:factory_ex, "~> 0.1.0", only: :test},
+      {:ecto_shorts, "~> 2.4.0"}
     ]
   end
 

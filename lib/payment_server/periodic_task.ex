@@ -2,7 +2,7 @@ defmodule PaymentServer.PeriodicTask do
   use GenServer
   require Logger
 
-  alias PaymentServerWeb.WalletHelpers
+  alias PaymentServer.Services.WalletService
 
   @default_name __MODULE__
   @interval if Mix.env() === :test, do: :timer.seconds(10), else: :timer.minutes(1)
@@ -35,14 +35,14 @@ defmodule PaymentServer.PeriodicTask do
   end
 
   defp check_all_currencies_subscriptions() do
-    Task.start(fn -> WalletHelpers.get_all_currency_updates() end)
+    Task.start(fn -> WalletService.get_all_currency_updates() end)
   end
 
   defp check_currency_subscriptions() do
-    WalletHelpers.fetch_accepted_currencies()
+    WalletService.fetch_accepted_currencies()
     |> Enum.map(fn currency_map -> currency_map.value end)
     |> Enum.each(fn currency ->
-      Task.start(fn -> WalletHelpers.get_currency_update(currency) end)
+      Task.start(fn -> WalletService.get_currency_update(currency) end)
     end)
   end
 end

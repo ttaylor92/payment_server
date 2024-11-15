@@ -5,7 +5,7 @@ defmodule PaymentServerWeb.Plugs.SetCurrentUser do
   import Absinthe.Plug
 
   alias PaymentServer.Repo
-  alias PaymentServer.Accounts.User
+  alias PaymentServer.SchemasPg.Accounts.User
 
   def init(opts), do: opts
 

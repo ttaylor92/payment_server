@@ -52,8 +52,8 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   end
 
   @update_user_mutation """
-  mutation updateUser($input: UserUpdateType!) {
-    updateUser(input: $input) {
+  mutation userUpdate($input: UserUpdateType!) {
+    userUpdate(input: $input) {
       id
       firstName
     }
@@ -67,7 +67,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
     end
 
     test "a user can update his account", %{user: user} do
-      assert {:ok, %{data: %{"updateUser" => updated_user}}} =
+      assert {:ok, %{data: %{"userUpdate" => updated_user}}} =
                Absinthe.run(@update_user_mutation, Schema,
                  context: %{
                    current_user: user
@@ -83,7 +83,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
 
   @registration_mutation """
   mutation($input: UserInputType!) {
-    registerUser(input: $input) {
+    userRegistration(input: $input) {
       id
       email
     }
@@ -91,7 +91,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   """
   describe "@User - Registration:" do
     test "a user can be registered" do
-      assert {:ok, %{data: %{"registerUser" => result}}} =
+      assert {:ok, %{data: %{"userRegistration" => result}}} =
                Absinthe.run(@registration_mutation, Schema,
                  variables: %{
                    "input" => @valid_user_params
@@ -115,14 +115,14 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
 
   @all_users_query """
   query {
-    getAllUsers {
+    users {
       id
     }
   }
   """
   @get_a_user_query """
   query {
-    getAUser {
+    user {
       id
       firstName
     }
@@ -130,7 +130,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
   """
   describe "@User - Get User Information" do
     test "a user can get all users", %{user: user} do
-      assert {:ok, %{data: %{"getAllUsers" => data}}} =
+      assert {:ok, %{data: %{"users" => data}}} =
                Absinthe.run(@all_users_query, Schema,
                  context: %{
                    current_user: user
@@ -149,7 +149,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
     end
 
     test "a user can get his account information", %{user: user} do
-      assert {:ok, %{data: %{"getAUser" => data}}} =
+      assert {:ok, %{data: %{"user" => data}}} =
                Absinthe.run(@get_a_user_query, Schema,
                  context: %{
                    current_user: user
@@ -162,8 +162,8 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
 
     test "a user can get another user's account information", %{user: user} do
       query = """
-      query getAUser($id: ID!) {
-        getAUser(id: $id) {
+      query user($id: ID!) {
+        user(id: $id) {
           id
           firstName
         }
@@ -174,7 +174,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
         %{UserFactory.build_param_map() | email: "random@email.com"}
         |> Accounts.create_user()
 
-      assert {:ok, %{data: %{"getAUser" => data}}} =
+      assert {:ok, %{data: %{"user" => data}}} =
                Absinthe.run(query, Schema,
                  context: %{
                    current_user: user
@@ -191,7 +191,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
 
   @delete_user_mutation """
   mutation {
-    deleteUser {
+    userDelete {
       message
     }
   }
@@ -202,7 +202,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
     end
 
     test "a user can delete his account", %{user: user} do
-      assert {:ok, %{data: %{"getAllUsers" => all_users}}} =
+      assert {:ok, %{data: %{"users" => all_users}}} =
                Absinthe.run(@all_users_query, Schema,
                  context: %{
                    current_user: user
@@ -218,7 +218,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
                  }
                )
 
-      assert {:ok, %{data: %{"getAllUsers" => all_users}}} =
+      assert {:ok, %{data: %{"users" => all_users}}} =
                Absinthe.run(@all_users_query, Schema,
                  context: %{
                    current_user: user
@@ -230,16 +230,16 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
 
     test "a user cannot delete another user", %{user: user} do
       mutation = """
-      mutation deleteUser($id: ID!) {
-        deleteUser(id: $id) {
+      mutation userDelete($id: ID!) {
+        userDelete(id: $id) {
           message
         }
       }
       """
 
       mutation2 = """
-      mutation deleteUser($email: String!) {
-        deleteUser(email: $email) {
+      mutation userDelete($email: String!) {
+        userDelete(email: $email) {
           message
         }
       }

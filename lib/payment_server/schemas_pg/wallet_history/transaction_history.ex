@@ -1,12 +1,12 @@
-defmodule PaymentServer.WalletHistory.TransactionHistory do
+defmodule PaymentServer.SchemasPg.WalletHistory.TransactionHistory do
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "transactions" do
     field :amount, :integer
     field :type, :string
-    belongs_to :currency, PaymentServer.Wallets.Currency
-    belongs_to :user, PaymentServer.Accounts.User
+    belongs_to :currency, PaymentServer.SchemasPg.Wallets.Currency
+    belongs_to :user, PaymentServer.SchemasPg.Accounts.User
 
     timestamps(type: :utc_datetime)
   end
@@ -20,7 +20,7 @@ defmodule PaymentServer.WalletHistory.TransactionHistory do
   end
 
   @doc false
-  def changeset(transaction_history = %PaymentServer.WalletHistory.TransactionHistory{}, attrs) do
+  def changeset(transaction_history = %PaymentServer.SchemasPg.WalletHistory.TransactionHistory{}, attrs) do
     transaction_history
     |> cast(attrs, @available_params)
     |> validate_required(@required_params)

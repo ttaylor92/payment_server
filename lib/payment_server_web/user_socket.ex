@@ -3,7 +3,7 @@ defmodule PaymentServerWeb.UserSocket do
   use Absinthe.Phoenix.Socket, schema: PaymentServerWeb.Schema
 
   alias PaymentServer.Repo
-  alias PaymentServer.Accounts.User
+  alias PaymentServer.SchemasPg.Accounts.User
 
   ## Channels
   channel "graphql:*", Absinthe.Phoenix.Channel

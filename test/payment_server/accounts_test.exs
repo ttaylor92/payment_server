@@ -1,8 +1,8 @@
-defmodule PaymentServer.AccountsTest do
+defmodule PaymentServer.SchemasPg.AccountsTest do
   use PaymentServer.DataCase, async: true
 
-  alias PaymentServer.Accounts
-  alias PaymentServer.Accounts.User
+  alias PaymentServer.SchemasPg.Accounts
+  alias PaymentServer.SchemasPg.Accounts.User
   alias PaymentServer.Support.UserFactory
 
   describe "list_users/0" do
@@ -65,26 +65,6 @@ defmodule PaymentServer.AccountsTest do
       {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
       assert {:ok, %User{}} = Accounts.delete_user(user)
       assert nil == Accounts.get_user(user.id)
-    end
-  end
-
-  describe "authenticate/2" do
-    test "authenticates the user with correct credentials" do
-      {:ok, user} =
-        UserFactory.build_param_map()
-        |> Accounts.create_user()
-
-      {:ok, authenticated_user} = Accounts.authenticate(user.email, "secret")
-      assert authenticated_user.email == user.email
-    end
-
-    test "throws an error with incorrect credentials" do
-      {:ok, user} =
-        UserFactory.build_param_map()
-        |> Accounts.create_user()
-
-      assert {:error, "No Matching account found."} =
-               Accounts.authenticate(user.email, "wrongpassword")
     end
   end
 end

@@ -1,6 +1,6 @@
 defmodule PaymentServerWeb.Resolvers.WalletResolver do
-  alias PaymentServer.Wallets
-  alias PaymentServerWeb.WalletHelpers
+  alias PaymentServer.SchemasPg.Wallets
+  alias PaymentServer.Services.WalletService
 
   defp find_wallet(user, id) when is_number(id) do
     case Enum.find(user.curriences, fn currency -> id === currency.id end) do
@@ -48,7 +48,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   end
 
   def get_currencies(_, _, %{context: %{current_user: _current_user}}) do
-    {:ok, WalletHelpers.fetch_accepted_currencies()}
+    {:ok, WalletService.fetch_accepted_currencies()}
   end
 
   def get_currencies(_, _, _) do
@@ -138,13 +138,13 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   end
 
   def process_transaction(_, %{input: input}, %{context: %{current_user: current_user}}) do
-    with {:ok, recipient} <- WalletHelpers.get_user(input.user_id),
+    with {:ok, recipient} <- WalletService.get_user(input.user_id),
          {:ok, recipient_wallet} <- find_wallet(recipient, input.wallet_type),
          {:ok, sender_wallet} <- find_wallet(current_user, input.wallet_type),
          {:ok, sender_result} <- update_wallet(sender_wallet, -input.requested_amount),
          {:ok, _recipient_result} <- update_wallet(recipient_wallet, input.requested_amount) do
-      WalletHelpers.get_total_worth(current_user.id)
-      WalletHelpers.get_total_worth(recipient.id)
+      WalletService.get_total_worth(current_user.id)
+      WalletService.get_total_worth(recipient.id)
       {:ok, sender_result}
     else
       {:error, :user_not_found} ->
@@ -165,7 +165,7 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
 
   def process_wallet_conversion(_, %{input: input}, %{context: %{current_user: current_user}}) do
     with {:ok, exchange_rate} <-
-           WalletHelpers.get_exchange_rate(input.currency_to, input.currency_from, true),
+           WalletService.get_exchange_rate(input.currency_to, input.currency_from, true),
          {:ok, wallet_to_convert} <- find_wallet(current_user, input.currency_from),
          {:ok, updated_wallet} <-
            convert_wallet(wallet_to_convert, exchange_rate, input.currency_to),

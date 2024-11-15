@@ -1,4 +1,4 @@
-defmodule PaymentServer.ExternalApiClient do
+defmodule PaymentServer.Services.ExternalApiService do
   use HTTPoison.Base
 
   @moduledoc """
@@ -15,19 +15,37 @@ defmodule PaymentServer.ExternalApiClient do
     - `to_currency_code`: The code for the currency to convert to.
     - `from_currency_code`: The code for the currency to convert from, default "USD".
 
+  ## Returns
+
+    - `{:ok, map}`: A map containing currency exchange information if the request is successful.
+    - `{:error, reason}`: An error tuple if the request fails.
+
   ## Examples
 
-      iex> MyApp.ExternalApiClient.get_currency("AUD")
+      iex> MyApp.ExternalApiService.get_currency("AUD")
       {:ok, %{
-        time_zone: "UTC",
-        from_currency_code: "USD",
-        to_currency_code: "AUD",
-        from_currency_name: "US Dollar",
-        to_currency_name: "Australian Dollar",
-        exchange_rate: "3.33",
-        last_refreshed: "2024-07-09 22:25:53.732684Z",
-        bid_price: "3.33",
-        ask_price: "3.33"
+        "time_zone" => "UTC",
+        "from_currency_code" => "USD",
+        "to_currency_code" => "AUD",
+        "from_currency_name" => "US Dollar",
+        "to_currency_name" => "Australian Dollar",
+        "exchange_rate" => "3.33",
+        "last_refreshed" => "2024-07-09 22:25:53.732684Z",
+        "bid_price" => "3.33",
+        "ask_price" => "3.33"
+      }}
+
+      iex> MyApp.ExternalApiService.get_currency("EUR", "AUD")
+      {:ok, %{
+        "time_zone" => "UTC",
+        "from_currency_code" => "AUD",
+        "to_currency_code" => "EUR",
+        "from_currency_name" => "Australian Dollar",
+        "to_currency_name" => "Euro",
+        "exchange_rate" => "0.67",
+        "last_refreshed" => "2024-07-09 22:25:53.732684Z",
+        "bid_price" => "0.67",
+        "ask_price" => "0.67"
       }}
   """
   def get_currency(to_currency_code, from_currency_code \\ "USD") do
@@ -76,8 +94,10 @@ defmodule PaymentServer.ExternalApiClient do
           }
         }
       )
-      %{from_currency_code: "USD", from_currency_name: "United States Dollar"}
+      %{"from_currency_code" => "USD", "from_currency_name" => "United States Dollar"}
 
+      iex> transform_keys(%{"Realtime Currency Exchange Rate" => %{}})
+      %{}
   """
   def transform_keys(%{"Realtime Currency Exchange Rate" => rate_data}) do
     rate_data
@@ -88,7 +108,7 @@ defmodule PaymentServer.ExternalApiClient do
         |> String.replace(~r/\s/, "_")
         |> String.downcase()
 
-      {String.to_atom(new_key), value}
+      {new_key, value}
     end)
     |> Enum.into(%{})
   end

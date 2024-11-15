@@ -1,7 +1,7 @@
 defmodule PaymentServer.Support.WalletFactory do
   @behaviour FactoryEx
 
-  def schema, do: PaymentServer.Wallets.Currency
+  def schema, do: PaymentServer.SchemasPg.Wallets.Currency
 
   def repo, do: PaymentServer.Repo
 

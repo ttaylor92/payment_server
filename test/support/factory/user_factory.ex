@@ -1,7 +1,7 @@
 defmodule PaymentServer.Support.UserFactory do
   @behaviour FactoryEx
 
-  def schema, do: PaymentServer.Accounts.User
+  def schema, do: PaymentServer.SchemasPg.Accounts.User
 
   def repo, do: PaymentServer.Repo
 

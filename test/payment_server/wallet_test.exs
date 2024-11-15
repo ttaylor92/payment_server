@@ -1,9 +1,9 @@
 defmodule PaymentServer.WalletTest do
   use PaymentServer.DataCase, async: true
 
-  alias PaymentServer.Wallets
-  alias PaymentServer.Accounts
-  alias PaymentServer.Wallets.Currency
+  alias PaymentServer.SchemasPg.Wallets
+  alias PaymentServer.SchemasPg.Accounts
+  alias PaymentServer.SchemasPg.Wallets.Currency
   alias PaymentServer.Support.{WalletFactory, UserFactory}
 
   setup [:setup_account]

@@ -1,5 +1,6 @@
 defmodule PaymentServerWeb.Resolvers.UserResolver do
-  alias PaymentServer.Accounts
+  alias PaymentServer.Services.Authentication
+  alias PaymentServer.SchemasPg.Accounts
   alias Utils.AuthToken
 
   def users(_, _, %{context: %{current_user: _current_user}}) do
@@ -37,7 +38,7 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
   end
 
   def sign_in(_, %{email: email, password: password}, _) do
-    case Accounts.authenticate(email, password) do
+    case Authentication.authenticate_user(email, password) do
       {:ok, %Accounts.User{} = user} ->
         {:ok, %{token: AuthToken.create(user), user: %{email: user.email}}}
 
