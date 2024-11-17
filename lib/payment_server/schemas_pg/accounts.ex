@@ -28,6 +28,13 @@ defmodule PaymentServer.SchemasPg.Accounts do
     end
   end
 
+  def get_user_by_email(email) do
+    case Repo.get_by(User, email: email) do
+      nil -> {:error, "No Matching account found."}
+      account -> {:ok, account}
+    end
+  end
+
 
   def create_user(attrs \\ %{}) do
     Repo.insert(User.create_changeset(attrs))

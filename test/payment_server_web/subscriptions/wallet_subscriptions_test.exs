@@ -1,9 +1,10 @@
 defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
   use PaymentServerWeb.SubscriptionCase
+alias PaymentServer.Services.Authentication
   use PaymentServer.DataCase, async: true
 
   alias PaymentServer.Support.{WalletFactory, UserFactory}
-  alias PaymentServer.{Accounts, Wallets}
+  alias PaymentServer.SchemasPg.{Accounts, Wallets}
   alias Utils.AuthToken
 
   setup [:setup_account, :setup_token]
@@ -23,12 +24,18 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
     }
     """
     test "a user can get updates from the currency_update subscription", %{
-      token: token
+      token: token,
+      user: user
     } do
       socket = setup_user_socket(token)
 
       # Setup a socket and join the channel
-      ref = push_doc(socket, @currency_subscription, variables: %{"currency" => "AUD"})
+      ref = push_doc(socket, @currency_subscription,
+        variables: %{"currency" => "AUD"},
+        context: %{
+          current_user: user
+        }
+      )
       assert_reply ref, :ok, %{subscriptionId: subscription_id}
 
       assert_push "subscription:data", data, :timer.seconds(12)
@@ -55,12 +62,15 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
     }
     """
     test "a user can get updates for all_currencies_update subscription", %{
-      token: token
+      token: token,
+      user: user
     } do
       socket = setup_user_socket(token)
 
       # Setup a socket and join the channel
-      ref = push_doc(socket, @all_currencies_subscription)
+      ref = push_doc(socket, @all_currencies_subscription, context: %{
+        current_user: user
+      })
       assert_reply ref, :ok, %{subscriptionId: subscription_id}
 
       assert_push "subscription:data", data, :timer.seconds(12)
@@ -112,7 +122,9 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
       socket = setup_user_socket(token)
 
       # Setup a socket and join the channel
-      ref = push_doc(socket, @total_worth_subscription)
+      ref = push_doc(socket, @total_worth_subscription, context: %{
+        current_user: user
+      })
       assert_reply ref, :ok, %{subscriptionId: subscription_id}
 
       # Trigger mutation
@@ -156,7 +168,7 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
 
   defp setup_token(context) do
     account = UserFactory.build_param_map()
-    {:ok, user} = Accounts.authenticate(account.email, account.password)
+    {:ok, user} = Authentication.authenticate_user(account.email, account.password)
     token = AuthToken.create(user)
     Map.put(context, :token, token)
   end
@@ -164,7 +176,7 @@ defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
   defp setup_user_socket(token) do
     {:ok, socket} =
       Phoenix.ChannelTest.connect(PaymentServerWeb.UserSocket, %{
-        "authorization" => "Bearer " <> token
+        "Authorization" => "Bearer " <> token
       })
 
     {:ok, socket} = Absinthe.Phoenix.SubscriptionTest.join_absinthe(socket)

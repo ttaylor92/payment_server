@@ -5,10 +5,7 @@ defmodule PaymentServer.SchemasPg.Wallets do
   alias PaymentServer.SchemasPg.Wallets.Currency
 
   def create(params \\ %{}, options \\ []) do
-    params
-    |> Currency.create_changeset()
-    |> Repo.insert(options)
-    |> case do
+    case Repo.insert(Currency.create_changeset(params), options) do
       {:error, changeset} ->
         {:error, changeset}
 
@@ -19,10 +16,7 @@ defmodule PaymentServer.SchemasPg.Wallets do
   end
 
   def update(%Currency{} = changeset, params) do
-    changeset
-    |> Currency.update_changeset(params)
-    |> Repo.update()
-    |> case do
+    case Repo.update(Currency.update_changeset(changeset, params)) do
       {:ok, schema} -> {:ok, Repo.preload(schema, [:user, :transaction])}
       error -> error
     end

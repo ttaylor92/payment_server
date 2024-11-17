@@ -9,26 +9,20 @@ defmodule PaymentServerWeb.UserSocket do
   channel "graphql:*", Absinthe.Phoenix.Channel
 
   def connect(params, socket, _connect_info) do
-    current_user(params)
-    |> case do
+    case current_user(params) do
       {:ok, user} ->
-        socket = Absinthe.Phoenix.Socket.put_options(socket, context: %{current_user: user})
-        {:ok, socket}
+        {:ok, Absinthe.Phoenix.Socket.put_options(socket, context: %{current_user: user})}
 
-      {:error, message} ->
-        {:error, reason: message}
+      {:error, message} -> {:error, reason: message}
     end
   end
 
-  def current_user(%{"authorization" => authorization_token}) do
+  def current_user(%{"Authorization" => authorization_token}) do
     "Bearer " <> token = authorization_token
 
     case Utils.AuthToken.verify(token) do
       {:ok, user_id} ->
-        User
-        |> Repo.get(user_id)
-        |> Repo.preload([:curriences])
-        |> case do
+        case Repo.preload(Repo.get(User, user_id), [:curriences]) do
           nil -> {:error, message: "Invalid authorization token"}
           user -> {:ok, user}
         end

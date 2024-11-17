@@ -1,4 +1,5 @@
 defmodule PaymentServer.Services.WalletService do
+  alias PaymentServer.SchemasPg.Wallets
   alias PaymentServer.SchemasPg.Accounts
   alias PaymentServer.Services.ExternalApiService
   alias NimbleCSV.RFC4180, as: CSV
@@ -84,7 +85,7 @@ defmodule PaymentServer.Services.WalletService do
       ) do
     case get_user(user_id) do
       {:ok, %PaymentServer.SchemasPg.Accounts.User{} = user} ->
-        user.curriences
+        result = user.curriences
         |> Task.async_stream(
           &fetch_exchange_and_returned_converted_value(&1, user.default_currency, api_client),
           max_concurrency: 10,
@@ -100,7 +101,8 @@ defmodule PaymentServer.Services.WalletService do
           _other, {:ok, _acc} ->
             {:error, message: "Unexpected result format!"}
         end)
-        |> case do
+
+        case result do
           {:ok, value} ->
             Absinthe.Subscription.publish(
               PaymentServerWeb.Endpoint,
@@ -166,5 +168,124 @@ defmodule PaymentServer.Services.WalletService do
       results,
       all_currencies_update: "all_currencies"
     )
+  end
+
+  def find_wallet(user_id, id) when is_number(id) do
+    user = Accounts.get_user(user_id, preload: :curriences)
+    case Enum.find(user.curriences, fn currency -> id === currency.id end) do
+      nil -> {:error, :wallet_not_found}
+      wallet -> {:ok, wallet}
+    end
+  end
+
+  def find_wallet(user_id, wallet_type) do
+    user = Accounts.get_user(user_id, preload: :curriences)
+    case Enum.find(user.curriences, fn currency -> wallet_type === currency.type end) do
+      nil -> {:error, :wallet_not_found}
+      wallet -> {:ok, wallet}
+    end
+  end
+
+  def convert_wallet(wallet, exchange_rate, new_currency_type) do
+    new_wallet_amount = wallet.amount * exchange_rate
+    updated_wallet = %{id: wallet.id, amount: new_wallet_amount, type: new_currency_type}
+    {:ok, updated_wallet}
+  end
+
+  def update_wallet(wallet, amount_change) when is_float(amount_change) do
+    case Wallets.update(wallet, %{amount: wallet.amount + amount_change}) do
+      {:ok, result} -> {:ok, result}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  def update_wallet(args, current_user) do
+    case find_wallet(current_user, String.to_integer(args.id)) do
+      {:error, _} ->
+        {:error, message: "Wallet not found!"}
+
+      {:ok, wallet} ->
+        attrs =
+          %{args | id: String.to_integer(args.id)}
+          |> Map.put(:user_id, current_user.id)
+          |> Map.put(:type, wallet.type)
+
+
+        case Wallets.update(wallet, attrs) do
+          {:ok, result} ->
+            {:ok, result}
+
+          {:error, changeset} ->
+            {
+              :error,
+              message: "Wallet update failed!",
+              details: Utils.GraphqlErrorHandler.errors_on(changeset)
+            }
+        end
+    end
+  end
+
+  def delete_wallet(id, current_user) do
+    case find_wallet(current_user, String.to_integer(id)) do
+      {:error, _} ->
+        {:error, message: "Wallet was not found."}
+
+      {:ok, wallet} ->
+        case Wallets.delete(wallet) do
+          {:ok, _result} ->
+            {:ok, %{message: "Wallet deleted."}}
+
+          {:error, changeset} ->
+            {
+              :error,
+              message: "Wallet update failed!",
+              details: Utils.GraphqlErrorHandler.errors_on(changeset)
+            }
+        end
+    end
+  end
+
+  def process_transaction(args, current_user) do
+    with {:ok, recipient} <- get_user(args.user_id),
+         {:ok, recipient_wallet} <- find_wallet(recipient, args.wallet_type),
+         {:ok, sender_wallet} <- find_wallet(current_user, args.wallet_type),
+         {:ok, sender_result} <- update_wallet(sender_wallet, -args.requested_amount),
+         {:ok, _recipient_result} <- update_wallet(recipient_wallet, args.requested_amount) do
+      get_total_worth(current_user.id)
+      get_total_worth(recipient.id)
+      {:ok, sender_result}
+    else
+      {:error, :user_not_found} ->
+        {:error, message: "The user requested does not exist."}
+
+      {:error, :wallet_not_found} ->
+        {:error, message: "Recipient or sender has no wallet with matching currency found."}
+
+      {:error, changeset} ->
+        {:error,
+         message: "Transaction failed.", details: Utils.GraphqlErrorHandler.errors_on(changeset)}
+    end
+  end
+
+  def process_wallet_conversion(args, current_user) do
+    with {:ok, exchange_rate} <- get_exchange_rate(args.currency_to, args.currency_from, true),
+        {:ok, wallet_to_convert} <- find_wallet(current_user, args.currency_from),
+        {:ok, updated_wallet} <-
+          convert_wallet(wallet_to_convert, exchange_rate, args.currency_to),
+        {:ok, data} <- Wallets.update(wallet_to_convert, updated_wallet) do
+    {:ok, data}
+    else
+    {:error, :exchange_rate_not_found} ->
+      {:error, message: "Failed to retrieve exchange rate."}
+
+    {:error, :wallet_not_found} ->
+      {:error, message: "Requested wallet to convert does not exist."}
+
+    {:error, changeset} ->
+      {:error,
+        message:
+          "We were unable to convert your #{args.currency_from} wallet to #{args.currency_to}",
+        details: Utils.GraphqlErrorHandler.errors_on(changeset)}
+    end
   end
 end

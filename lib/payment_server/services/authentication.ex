@@ -1,5 +1,5 @@
 defmodule PaymentServer.Services.Authentication do
-  alias PaymentServer.SchemasPg.Accounts.User
+  alias PaymentServer.SchemasPg.Accounts
 
   @doc """
   Attempts to authenticate a user based on the provided email and password.
@@ -32,15 +32,11 @@ defmodule PaymentServer.Services.Authentication do
   end
   """
   def authenticate_user(email, password) do
-    case Repo.get_by(User, email: email) do
-      nil ->
-        {:error, "No Matching account found."}
-
-      account ->
-        case Argon2.verify_pass(password, account.password_hash) do
-          true -> {:ok, account}
-          false -> {:error, "No Matching account found."}
-        end
+    with {:ok, account} <- Accounts.get_user_by_email(email) do
+      case Argon2.verify_pass(password, account.password_hash) do
+        true -> {:ok, account}
+        false -> {:error, "No Matching account found."}
+      end
     end
   end
 end

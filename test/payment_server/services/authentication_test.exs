@@ -1,4 +1,6 @@
 defmodule PaymentServer.Services.AuthenticationTest do
+  use PaymentServer.DataCase, async: true
+
   alias PaymentServer.Services.Authentication
   alias PaymentServer.SchemasPg.Accounts
   alias PaymentServer.Support.UserFactory
@@ -9,11 +11,11 @@ defmodule PaymentServer.Services.AuthenticationTest do
         UserFactory.build_param_map()
         |> Accounts.create_user()
 
-      {:ok, authenticated_user} = Accounts.authenticate_user(user.email, "secret")
+      {:ok, authenticated_user} = Authentication.authenticate_user(user.email, "secret")
       assert authenticated_user.email == user.email
     end
 
-    test "throws an error with incorrect credentials" do
+    test "returns an error tuple with incorrect credentials" do
       {:ok, user} =
         UserFactory.build_param_map()
         |> Accounts.create_user()
