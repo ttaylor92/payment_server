@@ -13,8 +13,7 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   def create_user(_, %{input: input}, _) do
     case Accounts.create_user(input) do
-      {:ok, account} ->
-        {:ok, account}
+      {:ok, account} -> {:ok, account}
 
       {:error, changeset} ->
         {:error,
@@ -49,8 +48,7 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   def delete_user(_, _, %{context: %{current_user: current_user}}) do
     case Accounts.delete_user(current_user) do
-      {:ok, _account} ->
-        {:ok, %{message: "Account deleted."}}
+      {:ok, _account} -> {:ok, %{message: "Account deleted."}}
 
       {:error, changeset} ->
         {:error,
@@ -64,8 +62,7 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   def update_user(_, %{input: input}, %{context: %{current_user: current_user}}) do
     case Accounts.update_user(current_user, input) do
-      {:ok, result} ->
-        {:ok, result}
+      {:ok, result} -> {:ok, result}
 
       {:error, changeset} ->
         {:error,

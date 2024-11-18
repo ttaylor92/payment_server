@@ -1,6 +1,20 @@
 defmodule PaymentServer.SchemasPg.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
+
+  @type t :: %__MODULE__{
+    id: integer(),
+    first_name: String.t(),
+    last_name: String.t(),
+    email: String.t(),
+    default_currency: String.t(),
+    password_hash: String.t(),
+    password: String.t() | nil,
+    password_confirmation: String.t() | nil,
+    inserted_at: DateTime.t(),
+    updated_at: DateTime.t()
+  }
 
   schema "users" do
     field :first_name, :string
@@ -55,5 +69,9 @@ defmodule PaymentServer.SchemasPg.Accounts.User do
   def update_changeset(%__MODULE__{} = changeset, params) do
     changeset
     |> changeset(params)
+  end
+
+  def query_by_id(id) do
+    from(u in __MODULE__, where: u.id == ^id, preload: [:curriences, :transactions])
   end
 end

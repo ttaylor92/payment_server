@@ -1,4 +1,6 @@
 defmodule PaymentServerWeb.Resolvers.WalletResolver do
+  alias PaymentServer.SchemasPg.Accounts.User
+  alias PaymentServer.SchemasPg.Accounts
   alias PaymentServer.SchemasPg.Wallets
   alias PaymentServer.Services.WalletService
 
@@ -28,15 +30,17 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
   end
 
   def get_wallet(_, %{wallet_type: wallet_type}, %{context: %{current_user: current_user}}) do
-    case WalletService.find_wallet(current_user.id, wallet_type) do
-      {:error, _} ->
-        {:error, message: "Wallet not found!"}
+    with %User{} = user <- Accounts.get_user(current_user.id, preload: :curriences) do
+      case WalletService.find_wallet(user, wallet_type) do
+        {:error, _} ->
+          {:error, message: "Wallet not found!"}
 
-      {:ok, wallet} ->
-        case Wallets.get_by_id(wallet.id) do
-          nil -> {:error, message: "Wallet not found!"}
-          wallet -> {:ok, wallet}
-        end
+        {:ok, wallet} ->
+          case Wallets.get_by_id(wallet.id) do
+            nil -> {:error, message: "Wallet not found!"}
+            wallet -> {:ok, wallet}
+          end
+      end
     end
   end
 

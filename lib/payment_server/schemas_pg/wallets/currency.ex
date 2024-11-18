@@ -1,12 +1,21 @@
 defmodule PaymentServer.SchemasPg.Wallets.Currency do
   use Ecto.Schema
   import Ecto.Changeset
+  alias PaymentServer.SchemasPg.WalletHistory.TransactionHistory
+  alias PaymentServer.SchemasPg.Accounts.User
+
+  @type t :: %__MODULE__{
+    type: String.t(),
+    amount: Float.t(),
+    user: User.t(),
+    transaction: list(TransactionHistory.t())
+  }
 
   schema "currencies" do
     field :type, :string
     field :amount, :float
-    belongs_to :user, PaymentServer.SchemasPg.Accounts.User
-    has_many :transaction, PaymentServer.SchemasPg.WalletHistory.TransactionHistory
+    belongs_to :user, User
+    has_many :transaction, TransactionHistory
 
     timestamps(type: :utc_datetime)
   end

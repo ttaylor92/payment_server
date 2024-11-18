@@ -1,5 +1,5 @@
 defmodule PaymentServer.SchemasPg.AccountsTest do
-  use PaymentServer.DataCase, async: true
+  use PaymentServer.DataCase
 
   alias PaymentServer.SchemasPg.Accounts
   alias PaymentServer.SchemasPg.Accounts.User

@@ -1,7 +1,7 @@
 defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
   use PaymentServerWeb.SubscriptionCase
 alias PaymentServer.Services.Authentication
-  use PaymentServer.DataCase, async: true
+  use PaymentServer.DataCase
 
   alias PaymentServer.Support.{WalletFactory, UserFactory}
   alias PaymentServer.SchemasPg.{Accounts, Wallets}

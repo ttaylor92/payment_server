@@ -10,7 +10,7 @@ defmodule PaymentServer.DataCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use PaymentServer.DataCase, async: true`, although
+  by setting `use PaymentServer.DataCase`, although
   this option is not recommended for other databases.
   """
 

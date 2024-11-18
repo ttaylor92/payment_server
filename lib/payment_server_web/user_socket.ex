@@ -2,8 +2,7 @@ defmodule PaymentServerWeb.UserSocket do
   use Phoenix.Socket
   use Absinthe.Phoenix.Socket, schema: PaymentServerWeb.Schema
 
-  alias PaymentServer.Repo
-  alias PaymentServer.SchemasPg.Accounts.User
+  alias PaymentServer.SchemasPg.Accounts
 
   ## Channels
   channel "graphql:*", Absinthe.Phoenix.Channel
@@ -22,7 +21,7 @@ defmodule PaymentServerWeb.UserSocket do
 
     case Utils.AuthToken.verify(token) do
       {:ok, user_id} ->
-        case Repo.preload(Repo.get(User, user_id), [:curriences]) do
+        case Accounts.get_user(user_id) do
           nil -> {:error, message: "Invalid authorization token"}
           user -> {:ok, user}
         end

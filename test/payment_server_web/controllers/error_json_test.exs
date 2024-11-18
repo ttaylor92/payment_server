@@ -1,5 +1,5 @@
 defmodule PaymentServerWeb.ErrorJSONTest do
-  use PaymentServerWeb.ConnCase, async: true
+  use PaymentServerWeb.ConnCase
 
   test "renders 404" do
     assert PaymentServerWeb.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}

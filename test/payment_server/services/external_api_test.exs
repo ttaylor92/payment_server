@@ -1,5 +1,5 @@
 defmodule PaymentServer.Services.ExternalApiServiceTest do
-  use PaymentServer.DataCase, async: true
+  use PaymentServer.DataCase
 
   alias PaymentServer.Services.ExternalApiService
 

@@ -1,5 +1,5 @@
 defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
-  use PaymentServer.DataCase, async: true
+  use PaymentServer.DataCase
 
   alias PaymentServerWeb.Schema
   alias PaymentServer.SchemasPg.{Accounts, Wallets}
@@ -73,7 +73,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
                  }
                )
 
-      updated_user = Accounts.get_user(user.id)
+      updated_user = Accounts.get_user(user.id, preload: :curriences)
 
       assert {:ok, %{data: %{"wallet" => data}}} =
                Absinthe.run(@wallet_query, Schema,

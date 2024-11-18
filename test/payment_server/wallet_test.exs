@@ -1,5 +1,5 @@
 defmodule PaymentServer.WalletTest do
-  use PaymentServer.DataCase, async: true
+  use PaymentServer.DataCase
 
   alias PaymentServer.SchemasPg.Wallets
   alias PaymentServer.SchemasPg.Accounts

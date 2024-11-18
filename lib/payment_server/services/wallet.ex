@@ -27,7 +27,7 @@ defmodule PaymentServer.Services.WalletService do
   Gets a user by user_id.
   """
   def get_user(user_id) do
-    case Accounts.get_user(user_id) do
+    case Accounts.get_user(user_id, preload: :curriences) do
       nil -> {:error, :user_not_found}
       user -> {:ok, user}
     end
@@ -170,16 +170,14 @@ defmodule PaymentServer.Services.WalletService do
     )
   end
 
-  def find_wallet(user_id, id) when is_number(id) do
-    user = Accounts.get_user(user_id, preload: :curriences)
+  def find_wallet(user, id) when is_number(id) do
     case Enum.find(user.curriences, fn currency -> id === currency.id end) do
       nil -> {:error, :wallet_not_found}
       wallet -> {:ok, wallet}
     end
   end
 
-  def find_wallet(user_id, wallet_type) do
-    user = Accounts.get_user(user_id, preload: :curriences)
+  def find_wallet(user, wallet_type) do
     case Enum.find(user.curriences, fn currency -> wallet_type === currency.type end) do
       nil -> {:error, :wallet_not_found}
       wallet -> {:ok, wallet}
@@ -200,28 +198,30 @@ defmodule PaymentServer.Services.WalletService do
   end
 
   def update_wallet(args, current_user) do
-    case find_wallet(current_user, String.to_integer(args.id)) do
-      {:error, _} ->
-        {:error, message: "Wallet not found!"}
+    with {:ok, user} <- get_user(current_user.id) do
+      case find_wallet(user, String.to_integer(args.id)) do
+        {:error, _} ->
+          {:error, message: "Wallet not found!"}
 
-      {:ok, wallet} ->
-        attrs =
-          %{args | id: String.to_integer(args.id)}
-          |> Map.put(:user_id, current_user.id)
-          |> Map.put(:type, wallet.type)
+        {:ok, wallet} ->
+          attrs =
+            %{args | id: String.to_integer(args.id)}
+            |> Map.put(:user_id, current_user.id)
+            |> Map.put(:type, wallet.type)
 
 
-        case Wallets.update(wallet, attrs) do
-          {:ok, result} ->
-            {:ok, result}
+          case Wallets.update(wallet, attrs) do
+            {:ok, result} ->
+              {:ok, result}
 
-          {:error, changeset} ->
-            {
-              :error,
-              message: "Wallet update failed!",
-              details: Utils.GraphqlErrorHandler.errors_on(changeset)
-            }
-        end
+            {:error, changeset} ->
+              {
+                :error,
+                message: "Wallet update failed!",
+                details: Utils.GraphqlErrorHandler.errors_on(changeset)
+              }
+          end
+      end
     end
   end
 
