@@ -22,8 +22,8 @@ defmodule PaymentServerWeb.UserSocket do
     case Utils.AuthToken.verify(token) do
       {:ok, user_id} ->
         case Accounts.get_user(user_id) do
-          nil -> {:error, message: "Invalid authorization token"}
-          user -> {:ok, user}
+          {:error, _} -> {:error, message: "Invalid authorization token"}
+          {:ok, user} -> {:ok, user}
         end
 
       {:error, _reason} ->

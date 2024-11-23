@@ -28,8 +28,8 @@ defmodule PaymentServer.Services.WalletService do
   """
   def get_user(user_id) do
     case Accounts.get_user(user_id, preload: :curriences) do
-      nil -> {:error, :user_not_found}
-      user -> {:ok, user}
+      {:error, _} -> {:error, :user_not_found}
+      {:ok, user} -> {:ok, user}
     end
   end
 

@@ -23,8 +23,8 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   def get_user(_, %{id: id}, %{context: %{current_user: _current_user}}) do
     case Accounts.get_user(id) do
-      nil -> {:error, message: "User not found!"}
-      user -> {:ok, user}
+      {:error, _} -> {:error, message: "User not found!"}
+      {:ok, user} -> {:ok, user}
     end
   end
 

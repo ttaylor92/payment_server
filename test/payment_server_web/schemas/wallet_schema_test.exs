@@ -20,6 +20,50 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     }
   }
   """
+  @wallet_query """
+    query wallet($walletType: String!) {
+      wallet(walletType: $walletType) {
+        id
+        type
+        user {
+          id
+          firstName
+        }
+      }
+    }
+  """
+  @all_wallets_query """
+  query {
+    wallets {
+      id
+      type
+    }
+  }
+  """
+  @currencies_query """
+    query currencies {
+      currencies {
+        label
+        value
+      }
+    }
+  """
+  @delete_wallet_mutation """
+  mutation walletDelete($id: ID!) {
+    walletDelete(id: $id) {
+      message
+    }
+  }
+  """
+  @wallet_transfer_mutation """
+  mutation processTransferRequest($input: WalletTransferInputType!) {
+    processTransferRequest(input: $input) {
+      id
+      amount
+    }
+  }
+  """
+
   describe "@Wallet - Wallet Creation" do
     test "a user can create a wallet", %{user: user} do
       assert {:ok, %{data: %{"walletCreate" => data}}} =
@@ -41,26 +85,6 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
   end
 
-  @wallet_query """
-    query wallet($walletType: String!) {
-      wallet(walletType: $walletType) {
-        id
-        type
-        user {
-          id
-          firstName
-        }
-      }
-    }
-  """
-  @all_wallets_query """
-  query {
-    wallets {
-      id
-      type
-    }
-  }
-  """
   describe "@Wallet - Get Wallet/s:" do
     test "a user can get his wallet", %{user: user} do
       assert {:ok, %{data: %{"walletCreate" => wallet}}} =
@@ -73,7 +97,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
                  }
                )
 
-      updated_user = Accounts.get_user(user.id, preload: :curriences)
+      {:ok, updated_user} = Accounts.get_user(user.id, preload: :curriences)
 
       assert {:ok, %{data: %{"wallet" => data}}} =
                Absinthe.run(@wallet_query, Schema,
@@ -120,14 +144,6 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
   end
 
-  @currencies_query """
-    query currencies {
-      currencies {
-        label
-        value
-      }
-    }
-  """
   describe "@Wallet - Currencies" do
     test "a user can get the list of accepted currencies", %{user: user} do
       assert {:ok, %{data: %{"currencies" => data}}} =
@@ -147,20 +163,13 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
   end
 
-  @delete_wallet_mutation """
-  mutation walletDelete($id: ID!) {
-    walletDelete(id: $id) {
-      message
-    }
-  }
-  """
   describe "@Wallet - Deletion:" do
     test "a user can delete his wallet", %{user: user} do
       {:ok, wallet} =
         WalletFactory.build_param_map(%{user_id: user.id})
         |> Wallets.create()
 
-      updated_user = Accounts.get_user(user.id)
+      {:ok, updated_user} = Accounts.get_user(user.id, preload: :curriences)
 
       {:ok, %{data: %{"walletDelete" => data}}} =
         Absinthe.run(@delete_wallet_mutation, Schema,
@@ -180,14 +189,6 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
     end
   end
 
-  @wallet_transfer_mutation """
-  mutation processTransferRequest($input: WalletTransferInputType!) {
-    processTransferRequest(input: $input) {
-      id
-      amount
-    }
-  }
-  """
   describe "@Wallet - Transfer:" do
     test "a user can transfer an amount to another user of the same currency", %{user: user} do
       {:ok, wallet} =
@@ -201,7 +202,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
         WalletFactory.build_param_map(%{user_id: receiver.id})
         |> Wallets.create()
 
-      updated_user_with_wallet = Accounts.get_user(user.id)
+      {:ok, updated_user_with_wallet} = Accounts.get_user(user.id, preload: :curriences)
 
       update_mutation = """
       mutation walletUpdate($input: WalletUpdateType!) {
@@ -226,7 +227,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
 
       assert wallet_update_response["amount"] === 100.00
 
-      updated_user_with_bal = Accounts.get_user(user.id)
+      {:ok, updated_user_with_bal} = Accounts.get_user(user.id, preload: :curriences)
 
       assert {:ok, %{data: %{"processTransferRequest" => _data}}} =
                Absinthe.run(@wallet_transfer_mutation, Schema,

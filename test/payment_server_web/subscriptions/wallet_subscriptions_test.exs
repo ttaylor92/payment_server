@@ -119,11 +119,13 @@ alias PaymentServer.Services.Authentication
       {:ok, _receiver_wallet} =
         WalletFactory.build_param_map(%{user_id: receiver.id}) |> Wallets.create()
 
+      {:ok, updated_user} = Accounts.get_user(user.id, preload: :curriences)
+
       socket = setup_user_socket(token)
 
       # Setup a socket and join the channel
       ref = push_doc(socket, @total_worth_subscription, context: %{
-        current_user: user
+        current_user: updated_user
       })
       assert_reply ref, :ok, %{subscriptionId: subscription_id}
 

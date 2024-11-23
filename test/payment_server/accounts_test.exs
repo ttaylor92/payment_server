@@ -17,7 +17,7 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
   describe "get_user/1" do
     test "returns the user with the given id" do
       {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
-      user_fetched = Accounts.get_user(user.id)
+      {:ok, user_fetched} = Accounts.get_user(user.id)
 
       assert user_fetched.email == user.email
     end
