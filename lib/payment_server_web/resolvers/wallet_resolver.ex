@@ -1,11 +1,9 @@
 defmodule PaymentServerWeb.Resolvers.WalletResolver do
-  alias PaymentServer.SchemasPg.Accounts.User
-  alias PaymentServer.SchemasPg.Accounts
   alias PaymentServer.SchemasPg.Wallets
   alias PaymentServer.Services.WalletService
 
   def create_wallet(_, %{type: type}, %{context: %{current_user: current_user}}) do
-    case Wallets.create(%{user_id: current_user.id, type: type}, []) do
+    case Wallets.create(%{user_id: current_user.id, type: type}, preload: :user) do
       {:ok, wallet} ->
         {:ok, wallet}
 
@@ -29,29 +27,16 @@ defmodule PaymentServerWeb.Resolvers.WalletResolver do
     {:error, message: "Unauthenticated!!!"}
   end
 
-  def get_wallet(_, %{wallet_type: wallet_type}, %{context: %{current_user: current_user}}) do
-    with {:ok, user} <- Accounts.get_user(current_user.id, preload: :curriences) do
-      case WalletService.find_wallet(user, wallet_type) do
-        {:error, _} -> {:error, message: "Wallet not found!"}
-
-        {:ok, wallet} ->
-          case Wallets.get_by_id(wallet.id) do
-            nil -> {:error, message: "Wallet not found!"}
-            wallet -> {:ok, wallet}
-          end
-      end
-    end
+  def get_wallet(_, %{wallet_type: type}, %{context: %{current_user: %{id: id}}}) do
+    Wallets.find_wallet(%{user_id: id, type: type}, preload: :user)
   end
 
   def get_wallet(_, _, _) do
     {:error, message: "Unauthenticated!!!"}
   end
 
-  def get_wallets(_, _, %{context: %{current_user: current_user}}) do
-    case Wallets.get_all(current_user.id) do
-      nil -> {:error, message: "No wallet found."}
-      wallet_list -> {:ok, wallet_list}
-    end
+  def get_wallets(args, _, %{context: %{current_user: current_user}}) do
+    {:ok, Wallets.get_all(Map.put(args, :user_id, current_user.id))}
   end
 
   def get_wallets(_, _, _) do

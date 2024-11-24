@@ -2,8 +2,8 @@
 FROM postgres:latest
 
 # Define environment variables for username and password
-ENV POSTGRES_USER=myuser
-ENV POSTGRES_PASSWORD=mypassword
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=admin
 
 # Set up the initial database
 ENV POSTGRES_DB=payment_server_dev

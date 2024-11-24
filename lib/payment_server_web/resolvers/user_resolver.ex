@@ -3,8 +3,8 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
   alias PaymentServer.SchemasPg.Accounts
   alias Utils.AuthToken
 
-  def users(_, _, %{context: %{current_user: _current_user}}) do
-    {:ok, Accounts.list_users()}
+  def users(args, _, %{context: %{current_user: _current_user}}) do
+    {:ok, Accounts.list_users(args, preload: :curriences)}
   end
 
   def users(_, _, _) do

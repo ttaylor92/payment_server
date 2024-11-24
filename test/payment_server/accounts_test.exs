@@ -5,25 +5,51 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
   alias PaymentServer.SchemasPg.Accounts.User
   alias PaymentServer.Support.UserFactory
 
-  describe "list_users/0" do
+  describe "list_users/2" do
     test "returns all users" do
-      UserFactory.build_param_map() |> Accounts.create_user()
-      fetch_users = Accounts.list_users()
+      Accounts.create_user(UserFactory.build_param_map())
+      users_fetched = Accounts.list_users()
 
-      assert length(fetch_users) > 0
+      assert length(users_fetched) > 0
+    end
+
+    test "lists users before given argument, before" do
+      _user1 = Accounts.create_user(UserFactory.build_param_map())
+      {:ok, user2} = Accounts.create_user(UserFactory.build_param_map())
+      users_fetched = Accounts.list_users(%{before: user2.id})
+
+      assert length(users_fetched) === 1
+    end
+
+    test "lists users after given argument, after" do
+      {:ok, user1} = Accounts.create_user(UserFactory.build_param_map())
+      _user2 = Accounts.create_user(UserFactory.build_param_map())
+      users_fetched = Accounts.list_users(%{after: user1.id})
+
+      assert length(users_fetched) === 1
+    end
+
+    test "lists based on given argument, first" do
+      _user1 = Accounts.create_user(UserFactory.build_param_map())
+      _user2 = Accounts.create_user(UserFactory.build_param_map())
+      _user3 = Accounts.create_user(UserFactory.build_param_map())
+      users_fetched = Accounts.list_users(%{first: 1})
+
+      assert length(users_fetched) === 1
     end
   end
 
   describe "get_user/1" do
     test "returns the user with the given id" do
-      {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+      {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
       {:ok, user_fetched} = Accounts.get_user(user.id)
 
       assert user_fetched.email == user.email
     end
 
     test "raises Ecto.NoResultsError if the user does not exist" do
-      assert nil == Accounts.get_user(-1)
+      assert {:error, error} = Accounts.get_user(-1)
+      assert error.code === :not_found
     end
   end
 
@@ -42,7 +68,7 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
 
   describe "update_user/2" do
     test "updates the user with valid data" do
-      {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+      {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
 
       updated_user_req =
         %{UserFactory.build_param_map() | first_name: "new_first_name"}
@@ -53,7 +79,7 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
     end
 
     test "returns error changeset with invalid data" do
-      {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+      {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
       updated_user_req = %{UserFactory.build_param_map() | email: "email.com"}
 
       assert {:error, %Ecto.Changeset{}} = Accounts.update_user(user, updated_user_req)
@@ -62,9 +88,10 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
 
   describe "delete_user/1" do
     test "deletes the user" do
-      {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+      {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
       assert {:ok, %User{}} = Accounts.delete_user(user)
-      assert nil == Accounts.get_user(user.id)
+      assert {:error, error} = Accounts.get_user(user.id)
+      assert error.code === :not_found
     end
   end
 end

@@ -8,11 +8,6 @@ defmodule PaymentServer.WalletTest do
 
   setup [:setup_account]
 
-  defp setup_account(context) do
-    {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
-    Map.put(context, :user, user)
-  end
-
   describe "create/1" do
     test "creates a currency with valid data", %{user: user} do
       valid_attrs = WalletFactory.build_param_map(%{user_id: user.id})
@@ -49,7 +44,7 @@ defmodule PaymentServer.WalletTest do
       {:ok, currency} = Wallets.create(currency_attrs)
 
       assert {:ok, %Currency{}} = Wallets.delete(currency)
-      assert Wallets.get_by_id(currency.id) == nil
+      assert {:error, "Wallet not found"} = Wallets.get_by_id(currency.id)
     end
   end
 
@@ -58,12 +53,12 @@ defmodule PaymentServer.WalletTest do
       currency_attrs = WalletFactory.build_param_map(%{user_id: user.id})
       {:ok, currency} = Wallets.create(currency_attrs)
 
-      found_currency = Wallets.get_by_id(currency.id)
+      {:ok, found_currency} = Wallets.get_by_id(currency.id)
       assert found_currency.type == currency.type
     end
 
-    test "returns nil if the currency does not exist" do
-      assert Wallets.get_by_id(-1) == nil
+    test "returns error if the currency does not exist" do
+      assert {:error, "Wallet not found"} = Wallets.get_by_id(-1)
     end
   end
 
@@ -75,10 +70,15 @@ defmodule PaymentServer.WalletTest do
       currency2_attrs = WalletFactory.build_param_map(%{user_id: user.id, type: "EUR"})
       {:ok, currency2} = Wallets.create(currency2_attrs)
 
-      currencies = Wallets.get_all(user.id)
+      currencies = Wallets.get_all(%{user_id: user.id})
       assert length(currencies) == 2
       assert Enum.any?(currencies, fn currency -> currency.type == currency1.type end)
       assert Enum.any?(currencies, fn currency -> currency.type == currency2.type end)
     end
+  end
+
+  defp setup_account(context) do
+    {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+    Map.put(context, :user, user)
   end
 end

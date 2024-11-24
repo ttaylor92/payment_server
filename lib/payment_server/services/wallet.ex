@@ -191,7 +191,7 @@ defmodule PaymentServer.Services.WalletService do
   end
 
   def update_wallet(wallet, amount_change) when is_float(amount_change) do
-    case Wallets.update(wallet, %{amount: wallet.amount + amount_change}) do
+    case Wallets.update(wallet, %{amount: wallet.amount + amount_change}, preload: [:user]) do
       {:ok, result} -> {:ok, result}
       {:error, changeset} -> {:error, changeset}
     end
@@ -210,7 +210,7 @@ defmodule PaymentServer.Services.WalletService do
             |> Map.put(:type, wallet.type)
 
 
-          case Wallets.update(wallet, attrs) do
+          case Wallets.update(wallet, attrs, preload: [:user]) do
             {:ok, result} ->
               {:ok, result}
 
@@ -247,10 +247,11 @@ defmodule PaymentServer.Services.WalletService do
 
   def process_transaction(args, current_user) do
     with {:ok, recipient} <- get_user(args.user_id),
-         {:ok, recipient_wallet} <- find_wallet(recipient, args.wallet_type),
-         {:ok, sender_wallet} <- find_wallet(current_user, args.wallet_type),
-         {:ok, sender_result} <- update_wallet(sender_wallet, -args.requested_amount),
-         {:ok, _recipient_result} <- update_wallet(recipient_wallet, args.requested_amount) do
+        {:ok, recipient_wallet} <- find_wallet(recipient, args.wallet_type),
+        {:ok, sender} <- get_user(current_user.id),
+        {:ok, sender_wallet} <- find_wallet(sender, args.wallet_type),
+        {:ok, sender_result} <- update_wallet(sender_wallet, -args.requested_amount),
+        {:ok, _recipient_result} <- update_wallet(recipient_wallet, args.requested_amount) do
       get_total_worth(current_user.id)
       get_total_worth(recipient.id)
       {:ok, sender_result}
@@ -272,7 +273,7 @@ defmodule PaymentServer.Services.WalletService do
         {:ok, wallet_to_convert} <- find_wallet(current_user, args.currency_from),
         {:ok, updated_wallet} <-
           convert_wallet(wallet_to_convert, exchange_rate, args.currency_to),
-        {:ok, data} <- Wallets.update(wallet_to_convert, updated_wallet) do
+        {:ok, data} <- Wallets.update(wallet_to_convert, updated_wallet, preload: [:user]) do
     {:ok, data}
     else
     {:error, :exchange_rate_not_found} ->

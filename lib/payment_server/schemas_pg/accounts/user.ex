@@ -2,6 +2,7 @@ defmodule PaymentServer.SchemasPg.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  alias PaymentServer.SchemasPg.Wallets.Currency
 
   @type t :: %__MODULE__{
     id: integer(),
@@ -13,7 +14,8 @@ defmodule PaymentServer.SchemasPg.Accounts.User do
     password: String.t() | nil,
     password_confirmation: String.t() | nil,
     inserted_at: DateTime.t(),
-    updated_at: DateTime.t()
+    updated_at: DateTime.t(),
+    curriences: list(Currency.t())
   }
 
   schema "users" do
@@ -24,8 +26,7 @@ defmodule PaymentServer.SchemasPg.Accounts.User do
     field :password_hash, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :password_confirmation, :string, virtual: true, redact: true
-    has_many :transactions, PaymentServer.SchemasPg.WalletHistory.TransactionHistory
-    has_many :curriences, PaymentServer.SchemasPg.Wallets.Currency
+    has_many :curriences, Currency
 
     timestamps(type: :utc_datetime)
   end
@@ -72,6 +73,6 @@ defmodule PaymentServer.SchemasPg.Accounts.User do
   end
 
   def query_by_id(id) do
-    from(u in __MODULE__, where: u.id == ^id, preload: [:curriences, :transactions])
+    from(u in __MODULE__, where: u.id == ^id, preload: [:curriences])
   end
 end

@@ -12,6 +12,7 @@ defmodule PaymentServerWeb.Schema.Queries.WalletQuery do
 
     @desc "Get all of a user's wallets"
     field :wallets, type: list_of(:wallet_type) do
+      arg :input, :wallets_query_input
       resolve &WalletResolver.get_wallets/3
     end
 

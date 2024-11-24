@@ -10,11 +10,13 @@ defmodule PaymentServer.SchemasPg.Accounts do
   alias PaymentServer.SchemasPg.Accounts.User
   alias PaymentServer.Repo
 
-  @spec list_users(map(), keyword()) :: {:ok, list(User.t())}
+  @spec list_users(map()) :: list(User.t())
+  @spec list_users(map(), keyword()) :: list(User.t())
   def list_users(params \\ %{}, opts \\ []) do
     Actions.all(User, params, opts)
   end
 
+  @spec get_user(integer()) :: {:ok, User.t()} | {:error, any()}
   @spec get_user(integer(), keyword()) :: {:ok, User.t()} | {:error, any()}
   def get_user(id, opts \\ []) do
     User
@@ -23,6 +25,7 @@ defmodule PaymentServer.SchemasPg.Accounts do
   end
 
   @spec get_user_by_email(String.t()) :: {:ok, User.t()} | {:error, String.t()}
+  @spec get_user_by_email(String.t(), keyword()) :: {:ok, User.t()} | {:error, String.t()}
   def get_user_by_email(email, opts \\ []) do
     case Actions.find(User, %{email: email}) do
       {:error, _} -> {:error, "No Matching account found."}
@@ -36,6 +39,7 @@ defmodule PaymentServer.SchemasPg.Accounts do
   end
 
   @spec update_user(User.t(), map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_user(User.t(), map(), keyword()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def update_user(%User{} = user, attrs \\ %{}, opts \\ []) do
     User
     |> Actions.update(user, attrs)

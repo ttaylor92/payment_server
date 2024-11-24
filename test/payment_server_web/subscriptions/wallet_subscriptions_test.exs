@@ -135,7 +135,7 @@ alias PaymentServer.Services.Authentication
       ref =
         push_doc(socket, @wallet_transfer_mutation,
           context: %{
-            current_user: user
+            current_user: updated_user
           },
           variables: %{
             "input" => %{
@@ -169,8 +169,7 @@ alias PaymentServer.Services.Authentication
   end
 
   defp setup_token(context) do
-    account = UserFactory.build_param_map()
-    {:ok, user} = Authentication.authenticate_user(account.email, account.password)
+    {:ok, user} = Authentication.authenticate_user(context.user.email, context.user.password)
     token = AuthToken.create(user)
     Map.put(context, :token, token)
   end

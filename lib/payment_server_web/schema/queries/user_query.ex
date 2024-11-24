@@ -7,6 +7,7 @@ defmodule PaymentServerWeb.Schema.Queries.UserQuery do
 
     @desc "Get a list of all users"
     field :users, list_of(:user_type) do
+      arg :input, :users_query_input
       resolve &UserResolver.users/3
     end
 
