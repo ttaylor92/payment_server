@@ -1,7 +1,7 @@
-defmodule PaymentServer.Services.WalletServiceTest do
+defmodule PaymentServer.WalletServiceTest do
   use ExUnit.Case
 
-  alias PaymentServer.Services.WalletService
+  alias PaymentServer.WalletService
 
   describe "fetch_accepted_currencies/0" do
     test "parses CSV file correctly" do

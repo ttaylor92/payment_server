@@ -1,7 +1,7 @@
-defmodule PaymentServer.Services.AuthenticationTest do
+defmodule PaymentServer.AuthenticationTest do
   use PaymentServer.DataCase
 
-  alias PaymentServer.Services.Authentication
+  alias PaymentServer.Authentication
   alias PaymentServer.SchemasPg.Accounts
   alias PaymentServer.Support.UserFactory
 

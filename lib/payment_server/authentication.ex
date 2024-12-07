@@ -1,4 +1,4 @@
-defmodule PaymentServer.Services.Authentication do
+defmodule PaymentServer.Authentication do
   alias PaymentServer.SchemasPg.Accounts
 
   @doc """

@@ -2,7 +2,7 @@ defmodule PaymentServer.PeriodicTask do
   use GenServer
   require Logger
 
-  alias PaymentServer.Services.WalletService
+  alias PaymentServer.WalletService
 
   @interval if Mix.env() === :test, do: :timer.seconds(10), else: :timer.minutes(1)
 

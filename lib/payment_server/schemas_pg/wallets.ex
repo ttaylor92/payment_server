@@ -1,8 +1,6 @@
 defmodule PaymentServer.SchemasPg.Wallets do
   import Ecto.Query, warn: false
 
-  alias Faker.Currency
-  alias Faker.Currency
   alias EctoShorts.Actions
   alias PaymentServer.Repo
   alias PaymentServer.SchemasPg.Wallets.Currency

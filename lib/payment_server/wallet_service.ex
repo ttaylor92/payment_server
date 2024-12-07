@@ -1,7 +1,9 @@
-defmodule PaymentServer.Services.WalletService do
+defmodule PaymentServer.WalletService do
   alias PaymentServer.SchemasPg.Wallets
   alias PaymentServer.SchemasPg.Accounts
-  alias PaymentServer.Services.ExternalApiService
+  alias PaymentServer.SchemasPg.Rates
+  alias PaymentServer.ExternalApiService
+  alias PaymentServer.SchemasPg.Rates.Rate
   alias NimbleCSV.RFC4180, as: CSV
 
   @doc """
@@ -44,9 +46,19 @@ defmodule PaymentServer.Services.WalletService do
       )
 
   def get_exchange_rate(currency_to, currency_from, true, api_client) do
-    case api_client.get_currency(currency_to, currency_from) do
-      {:ok, result} -> {:ok, String.to_float(result["exchange_rate"])}
-      {:error, _} -> {:error, :exchange_rate_not_found}
+    case Rates.find_by_currency(%{currency: currency_to}) do
+      {:ok, rate} when not is_time_beyond_limit?(rate.inserted_at, 10) ->
+        {:ok, rate.value}
+
+      _ ->
+        case api_client.get_currency(currency_to, currency_from) do
+          {:ok, result} ->
+            exchange_rate = String.to_float(result["exchange_rate"])
+            Rates.create(%{currency: currency_to, from_currency: currency_from, value: exchange_rate})
+            {:ok, exchange_rate}
+
+          {:error, _} -> {:error, :exchange_rate_not_found}
+        end
     end
   end
 
@@ -74,6 +86,10 @@ defmodule PaymentServer.Services.WalletService do
         {:error, _} -> 0
       end
     end
+  end
+
+  defp is_time_beyond_limit?(inserted_time, time) do
+    DateTime.diff(DateTime.utc_now(), inserted_time, :minute) >= time
   end
 
   @doc """

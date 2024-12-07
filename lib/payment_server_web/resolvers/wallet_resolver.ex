@@ -1,6 +1,6 @@
 defmodule PaymentServerWeb.Resolvers.WalletResolver do
   alias PaymentServer.SchemasPg.Wallets
-  alias PaymentServer.Services.WalletService
+  alias PaymentServer.WalletService
 
   def create_wallet(_, %{type: type}, %{context: %{current_user: current_user}}) do
     case Wallets.create(%{user_id: current_user.id, type: type}, preload: :user) do

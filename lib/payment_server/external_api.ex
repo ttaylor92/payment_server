@@ -1,4 +1,4 @@
-defmodule PaymentServer.Services.ExternalApiService do
+defmodule PaymentServer.ExternalApiService do
   use HTTPoison.Base
 
   @moduledoc """

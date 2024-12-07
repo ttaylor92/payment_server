@@ -1,5 +1,5 @@
 defmodule PaymentServerWeb.Resolvers.UserResolver do
-  alias PaymentServer.Services.Authentication
+  alias PaymentServer.Authentication
   alias PaymentServer.SchemasPg.Accounts
   alias Utils.AuthToken
 

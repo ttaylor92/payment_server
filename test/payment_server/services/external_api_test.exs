@@ -1,7 +1,7 @@
-defmodule PaymentServer.Services.ExternalApiServiceTest do
+defmodule PaymentServer.ExternalApiServiceTest do
   use PaymentServer.DataCase
 
-  alias PaymentServer.Services.ExternalApiService
+  alias PaymentServer.ExternalApiService
 
   describe "transform_keys/1" do
     test "returns map with formatted keys as atoms in snake case" do
