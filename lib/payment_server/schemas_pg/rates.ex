@@ -10,13 +10,16 @@ defmodule PaymentServer.SchemasPg.Rates do
     Actions.create(Rate, params)
   end
 
-  @spec list_rates(map()) :: list(Rate.t())
-  def list_rates(params \\ %{}) do
+  @spec list_rates(list() | map()) :: list(Rate.t())
+  def list_rates(params) do
     Actions.all(Rate, params)
   end
 
-  @spec find_by_currency(String.t()) :: {:ok, Rate.t()} | {:error, any()}
+  @spec find_by_currency(String.t()) :: Rate.t() | nil
   def find_by_currency(currency) do
-    Actions.find(Rate, %{currency: currency})
+    case Actions.all(Rate, %{currency: currency, last: 1}) do
+      [] -> nil
+      rates_list -> List.first(rates_list)
+    end
   end
 end

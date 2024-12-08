@@ -3,7 +3,6 @@ defmodule PaymentServer.WalletService do
   alias PaymentServer.SchemasPg.Accounts
   alias PaymentServer.SchemasPg.Rates
   alias PaymentServer.ExternalApiService
-  alias PaymentServer.SchemasPg.Rates.Rate
   alias NimbleCSV.RFC4180, as: CSV
 
   @doc """
@@ -38,41 +37,44 @@ defmodule PaymentServer.WalletService do
   @doc """
   Fetches the exchange rate between two currencies.
   """
-  def get_exchange_rate(
-        currency_to,
-        currency_from,
-        display_error,
-        api_client \\ ExternalApiService
-      )
+  def get_exchange_rate(currency_to, currency_from, display_error?, api_client \\ ExternalApiService)
 
-  def get_exchange_rate(currency_to, currency_from, true, api_client) do
-    case Rates.find_by_currency(%{currency: currency_to}) do
-      {:ok, rate} when not is_time_beyond_limit?(rate.inserted_at, 10) ->
-        {:ok, rate.value}
+  def get_exchange_rate(currency_to, currency_from, display_error?, api_client) do
+    case Rates.find_by_currency(currency_to) do
+      nil ->
+        fetch_and_create_exchange_rate(currency_to, currency_from, display_error?, api_client)
 
-      _ ->
-        case api_client.get_currency(currency_to, currency_from) do
-          {:ok, result} ->
-            exchange_rate = String.to_float(result["exchange_rate"])
-            Rates.create(%{currency: currency_to, from_currency: currency_from, value: exchange_rate})
-            {:ok, exchange_rate}
-
-          {:error, _} -> {:error, :exchange_rate_not_found}
+      rate ->
+        if not is_time_beyond_limit?(rate.inserted_at, 10) do
+          if display_error? do
+            {:ok, rate}
+          else
+            %{currency: currency_to, from_currency: currency_from, value: rate.value}
+          end
+        else
+          fetch_and_create_exchange_rate(currency_to, currency_from, display_error?, api_client)
         end
     end
   end
 
-  def get_exchange_rate(currency_to, currency_from, false, api_client) do
+  defp fetch_and_create_exchange_rate(currency_to, currency_from, display_error?, api_client) do
     case api_client.get_currency(currency_to, currency_from) do
       {:ok, result} ->
-        %{
-          currency_from: currency_from,
-          currency_to: currency_to,
-          rate: String.to_float(result["exchange_rate"])
-        }
+        exchange_rate = String.to_float(result["exchange_rate"])
+        rate_request = %{currency: currency_to, from_currency: currency_from, value: exchange_rate}
+
+        if display_error? do
+          {:ok, exchange_rate}
+        else
+          rate_request
+        end
 
       {:error, _} ->
-        %{currency_from: currency_from, currency_to: currency_to, rate: 0}
+        if display_error? do
+          {:error, :exchange_rate_not_found}
+        else
+          %{currency_from: currency_from, currency_to: currency_to, rate: 0}
+        end
     end
   end
 
@@ -161,14 +163,30 @@ defmodule PaymentServer.WalletService do
   @doc """
   Publishes updates for all currencies.
   """
-  def get_all_currency_updates(
-        default_currency \\ "USD",
-        api_client \\ ExternalApiService,
-        file_reader \\ &File.read!/1,
-        csv_parser \\ &CSV.parse_string/1
-      ) do
-    results =
-      fetch_accepted_currencies(file_reader, csv_parser)
+  def get_all_currency_updates(file_reader \\ &File.read!/1, csv_parser \\ &CSV.parse_string/1) do
+    inserted_at = DateTime.utc_now()
+    inserted_at = DateTime.add(inserted_at, 10, :minute)
+    accepted_currencies = fetch_accepted_currencies(file_reader, csv_parser)
+
+    db_list_of_accepted_currencies = accepted_currencies
+      |> Enum.reduce(%{last: 0, currency: [], inserted_at: %{lte: inserted_at}}, fn %{label: _label, value: value}, acc ->
+        %{acc | last: acc.last + 1, currency: [value | acc.currency]}
+      end)
+      |> Rates.list_rates()
+
+    if length(db_list_of_accepted_currencies) === 0 or is_time_beyond_limit?(List.first(db_list_of_accepted_currencies).inserted_at, 10) do
+      fetch_exchange_rate_and_publish(accepted_currencies)
+    else
+      publish_db_list_of_currencies(db_list_of_accepted_currencies)
+    end
+  end
+
+  defp fetch_exchange_rate_and_publish(
+    accepted_currencies,
+    default_currency \\ "USD",
+    api_client \\ ExternalApiService
+  ) do
+    results = accepted_currencies
       |> Task.async_stream(
         &get_exchange_rate(&1.value, default_currency, false, api_client),
         max_concurrency: 10,
@@ -178,6 +196,18 @@ defmodule PaymentServer.WalletService do
         {:ok, result}, acc -> [result | acc]
         {:error, _reason}, acc -> acc
       end)
+
+    Absinthe.Subscription.publish(
+      PaymentServerWeb.Endpoint,
+      results,
+      all_currencies_update: "all_currencies"
+    )
+  end
+
+  defp publish_db_list_of_currencies(db_list_of_currencies) do
+    results = Enum.map(db_list_of_currencies, fn rate ->
+      %{currency_from: rate.from_currency, currency_to: rate.currency, rate: rate.value}
+    end)
 
     Absinthe.Subscription.publish(
       PaymentServerWeb.Endpoint,
