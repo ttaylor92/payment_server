@@ -3,18 +3,18 @@ defmodule PaymentServer.SchemasPg.Rates.Rate do
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-    currency: String.t(),
-    from_currency: String.t(),
-    value: float()
+    currency_to: String.t(),
+    currency_from: String.t(),
+    rate: float()
   }
 
-  @required_params [:currency, :value]
+  @required_params [:currency_to, :rate]
   @available_params []
 
   schema "rates" do
-    field :currency, :string
-    field :from_currency, :string, default: "USD"
-    field :value, :float
+    field :currency_to, :string
+    field :currency_from, :string, default: "USD"
+    field :rate, :float
 
     timestamps(type: :utc_datetime)
   end
@@ -28,14 +28,9 @@ defmodule PaymentServer.SchemasPg.Rates.Rate do
     currency
     |> cast(attrs, @available_params ++ @required_params)
     |> validate_required(@required_params)
-    |> validate_fields_not_equal(:currency, :from_currency)
-    |> update_change(:currency, &String.upcase(&1))
-    |> update_change(:from_currency, &String.upcase(&1))
-  end
-
-  def update_changeset(%__MODULE__{} = changeset, attrs) do
-    changeset
-    |> cast(attrs, [:amount, :type])
+    |> validate_fields_not_equal(:currency_to, :currency_from)
+    |> update_change(:currency_to, &String.upcase(&1))
+    |> update_change(:currency_from, &String.upcase(&1))
   end
 
   defp validate_fields_not_equal(changeset, field1, field2) do

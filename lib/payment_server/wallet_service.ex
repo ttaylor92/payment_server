@@ -49,7 +49,7 @@ defmodule PaymentServer.WalletService do
           if display_error? do
             {:ok, rate}
           else
-            %{currency: currency_to, from_currency: currency_from, value: rate.value}
+            %{currency_to: currency_to, currency_from: currency_from, rate: rate.value}
           end
         else
           fetch_and_create_exchange_rate(currency_to, currency_from, display_error?, api_client)
@@ -61,7 +61,7 @@ defmodule PaymentServer.WalletService do
     case api_client.get_currency(currency_to, currency_from) do
       {:ok, result} ->
         exchange_rate = String.to_float(result["exchange_rate"])
-        rate_request = %{currency: currency_to, from_currency: currency_from, value: exchange_rate}
+        rate_request = %{currency_to: currency_to, currency_from: currency_from, rate: exchange_rate}
 
         if display_error? do
           {:ok, exchange_rate}
@@ -169,8 +169,8 @@ defmodule PaymentServer.WalletService do
     accepted_currencies = fetch_accepted_currencies(file_reader, csv_parser)
 
     db_list_of_accepted_currencies = accepted_currencies
-      |> Enum.reduce(%{last: 0, currency: [], inserted_at: %{lte: inserted_at}}, fn %{label: _label, value: value}, acc ->
-        %{acc | last: acc.last + 1, currency: [value | acc.currency]}
+      |> Enum.reduce(%{last: 0, currency_to: [], inserted_at: %{lte: inserted_at}}, fn %{label: _label, value: value}, acc ->
+        %{acc | last: acc.last + 1, currency_to: [value | acc.currency_to]}
       end)
       |> Rates.list_rates()
 
@@ -188,7 +188,7 @@ defmodule PaymentServer.WalletService do
   ) do
     results = accepted_currencies
       |> Task.async_stream(
-        &get_exchange_rate(&1.value, default_currency, false, api_client),
+        &fetch_and_create_exchange_rate(&1.value, default_currency, false, api_client),
         max_concurrency: 10,
         timeout: 5000
       )
@@ -202,11 +202,23 @@ defmodule PaymentServer.WalletService do
       results,
       all_currencies_update: "all_currencies"
     )
+
+    Enum.each(results, fn result ->
+      Task.start(fn ->
+        topic = "currency:#{result.currency_to}"
+
+        Absinthe.Subscription.publish(
+          PaymentServerWeb.Endpoint,
+          %{amount: result.rate, default_currency: default_currency},
+          currency_update: topic
+        )
+      end)
+    end)
   end
 
   defp publish_db_list_of_currencies(db_list_of_currencies) do
-    results = Enum.map(db_list_of_currencies, fn rate ->
-      %{currency_from: rate.from_currency, currency_to: rate.currency, rate: rate.value}
+    results = Enum.map(db_list_of_currencies, fn currency ->
+      %{currency_from: currency.currency_from, currency_to: currency.currency_to, rate: currency.rate}
     end)
 
     Absinthe.Subscription.publish(
@@ -214,6 +226,18 @@ defmodule PaymentServer.WalletService do
       results,
       all_currencies_update: "all_currencies"
     )
+
+    Enum.each(results, fn result ->
+      Task.start(fn ->
+        topic = "currency:#{result.currency_to}"
+
+        Absinthe.Subscription.publish(
+          PaymentServerWeb.Endpoint,
+          %{amount: result.rate, default_currency: result.currency_from},
+          currency_update: topic
+        )
+      end)
+    end)
   end
 
   def find_wallet(user, id) when is_number(id) do
