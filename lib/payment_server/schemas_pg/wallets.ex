@@ -16,9 +16,7 @@ defmodule PaymentServer.SchemasPg.Wallets do
   @spec update(Currency.t(), map()) :: {:ok, Currency.t()} | {:error, Ecto.Schema.t()}
   @spec update(Currency.t(), map(), keyword()) :: {:ok, Currency.t()} | {:error, Ecto.Schema.t()}
   def update(%Currency{} = changeset, params, options \\ []) do
-    Currency
-    |> Actions.update(changeset, params)
-    |> maybe_preload(options)
+    Actions.update(Currency, changeset, Map.put(params, :preload, Keyword.get(options, :preload, [])))
   end
 
   @spec delete(Currency.t()) :: {:ok, Currency.t()} | {:error, Ecto.Schema.t()}
@@ -29,18 +27,13 @@ defmodule PaymentServer.SchemasPg.Wallets do
   @spec get_by_id(String.t() | integer()) :: {:ok, Currency.t()} | {:error, String.t()}
   @spec get_by_id(String.t() | integer(), keyword()) :: {:ok, Currency.t()} | {:error, String.t()}
   def get_by_id(id, options \\ []) do
-    case Actions.get(Currency, id) do
-      nil -> {:error, "Wallet not found"}
-      user -> maybe_preload({:ok, user}, options)
-    end
+    Actions.find(Currency, %{id: id, preload: Keyword.get(options, :preload, [])})
   end
 
   @spec find_wallet(map()) :: {:ok, Currency.t()} | {:error, String.t()}
   @spec find_wallet(map(), keyword()) :: {:ok, Currency.t()} | {:error, String.t()}
   def find_wallet(params, options \\ []) do
-    Currency
-    |> Actions.find(params)
-    |> maybe_preload(options)
+    Actions.find(Currency, Map.put(params, :preload, Keyword.get(options, :preload, [])))
   end
 
   @spec get_all(map()) :: list(Currency.t())

@@ -1,7 +1,7 @@
 defmodule PaymentServer.WalletService do
+  alias PaymentServer.PeriodicTask
   alias PaymentServer.SchemasPg.Wallets
   alias PaymentServer.SchemasPg.Accounts
-  alias PaymentServer.SchemasPg.Rates
   alias PaymentServer.ExternalApiService
   alias NimbleCSV.RFC4180, as: CSV
 
@@ -40,7 +40,7 @@ defmodule PaymentServer.WalletService do
   def get_exchange_rate(currency_to, currency_from, display_error?, api_client \\ ExternalApiService)
 
   def get_exchange_rate(currency_to, currency_from, display_error?, api_client) do
-    case Rates.find_by_currency(currency_to) do
+    case find_rate_by_currency(currency_to) do
       nil ->
         fetch_and_create_exchange_rate(currency_to, currency_from, display_error?, api_client)
 
@@ -92,6 +92,11 @@ defmodule PaymentServer.WalletService do
 
   defp is_time_beyond_limit?(inserted_time, time) do
     DateTime.diff(DateTime.utc_now(), inserted_time, :minute) >= time
+  end
+
+  defp find_rate_by_currency(currency_to) do
+    cache = PeriodicTask.get_state()
+    Enum.find(cache.rates, nil, fn rate -> rate.currency_to === currency_to end)
   end
 
   @doc """
@@ -164,20 +169,14 @@ defmodule PaymentServer.WalletService do
   Publishes updates for all currencies.
   """
   def get_all_currency_updates(file_reader \\ &File.read!/1, csv_parser \\ &CSV.parse_string/1) do
-    inserted_at = DateTime.utc_now()
-    inserted_at = DateTime.add(inserted_at, 10, :minute)
     accepted_currencies = fetch_accepted_currencies(file_reader, csv_parser)
 
-    db_list_of_accepted_currencies = accepted_currencies
-      |> Enum.reduce(%{last: 0, currency_to: [], inserted_at: %{lte: inserted_at}}, fn %{label: _label, value: value}, acc ->
-        %{acc | last: acc.last + 1, currency_to: [value | acc.currency_to]}
-      end)
-      |> Rates.list_rates()
+    cached_accepted_currencies = PeriodicTask.get_state()
 
-    if length(db_list_of_accepted_currencies) === 0 or is_time_beyond_limit?(List.first(db_list_of_accepted_currencies).inserted_at, 10) do
+    if length(cached_accepted_currencies.rates) === 0 or is_time_beyond_limit?(cached_accepted_currencies.updated_at, 2) do
       fetch_exchange_rate_and_publish(accepted_currencies)
     else
-      publish_db_list_of_currencies(db_list_of_accepted_currencies)
+      publish_db_list_of_currencies(cached_accepted_currencies.rates)
     end
   end
 
@@ -195,6 +194,13 @@ defmodule PaymentServer.WalletService do
       |> Enum.reduce([], fn
         {:ok, result}, acc -> [result | acc]
         {:error, _reason}, acc -> acc
+      end)
+      |> Enum.map(fn currency ->
+        if is_float(currency.rate) do
+          currency
+        else
+          Map.update(currency, :rate, 0.0, fn val -> val / 1 end)
+        end
       end)
 
     Absinthe.Subscription.publish(
@@ -214,6 +220,8 @@ defmodule PaymentServer.WalletService do
         )
       end)
     end)
+
+    PeriodicTask.update_state(results)
   end
 
   defp publish_db_list_of_currencies(db_list_of_currencies) do

@@ -1,4 +1,4 @@
-defmodule PaymentServer.WalletTest do
+defmodule PaymentServer.WalletsTest do
   use PaymentServer.DataCase
 
   alias PaymentServer.SchemasPg.Wallets
@@ -16,7 +16,7 @@ defmodule PaymentServer.WalletTest do
     end
 
     test "returns error changeset with invalid data" do
-      invalid_attrs = %{"type" => nil}
+      invalid_attrs = %{type: nil}
       assert {:error, %Ecto.Changeset{}} = Wallets.create(invalid_attrs)
     end
   end
@@ -44,7 +44,7 @@ defmodule PaymentServer.WalletTest do
       {:ok, currency} = Wallets.create(currency_attrs)
 
       assert {:ok, %Currency{}} = Wallets.delete(currency)
-      assert {:error, "Wallet not found"} = Wallets.get_by_id(currency.id)
+      assert {:error, %ErrorMessage{code: :not_found, message: "no records found", details: _}} = Wallets.get_by_id(currency.id)
     end
   end
 
@@ -58,7 +58,7 @@ defmodule PaymentServer.WalletTest do
     end
 
     test "returns error if the currency does not exist" do
-      assert {:error, "Wallet not found"} = Wallets.get_by_id(-1)
+      assert {:error, %ErrorMessage{code: :not_found, message: "no records found", details: _}} = Wallets.get_by_id(-1)
     end
   end
 
