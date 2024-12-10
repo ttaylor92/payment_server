@@ -10,7 +10,7 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
       Accounts.create_user(UserFactory.build_param_map())
       users_fetched = Accounts.list_users()
 
-      assert length(users_fetched) > 0
+      assert Enum.empty?(users_fetched) === false
     end
 
     test "lists users before given argument, before" do
@@ -44,7 +44,7 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
       {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
       {:ok, user_fetched} = Accounts.get_user(user.id)
 
-      assert user_fetched.email == user.email
+      assert user_fetched.email === user.email
     end
 
     test "raises Ecto.NoResultsError if the user does not exist" do
@@ -57,7 +57,7 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
     test "creates a user with valid data" do
       valid_attrs = UserFactory.build_param_map()
       assert {:ok, %User{} = user} = Accounts.create_user(valid_attrs)
-      assert user.email == valid_attrs.email
+      assert user.email === valid_attrs.email
     end
 
     test "returns error changeset with invalid data" do
@@ -71,11 +71,10 @@ defmodule PaymentServer.SchemasPg.AccountsTest do
       {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
 
       updated_user_req =
-        %{UserFactory.build_param_map() | first_name: "new_first_name"}
-        |> Map.put(:id, user.id)
+        Map.put(%{UserFactory.build_param_map() | first_name: "new_first_name"}, :id, user.id)
 
       assert {:ok, updated_user} = Accounts.update_user(user, updated_user_req)
-      assert updated_user.first_name == "new_first_name"
+      assert updated_user.first_name === "new_first_name"
     end
 
     test "returns error changeset with invalid data" do
