@@ -1,9 +1,9 @@
-defmodule PaymentServerWeb.Schemas.UserSchemaTest do
+defmodule PaymentServerWeb.Schemas.UserMutationTest do
   use PaymentServer.DataCase
 
   alias PaymentServerWeb.Schema
-  alias PaymentServer.SchemasPg.{Accounts}
-  alias PaymentServer.Support.{UserFactory}
+  alias PaymentServer.SchemasPg.Accounts
+  alias PaymentServer.Support.UserFactory
 
   setup [:setup_account]
 
@@ -106,7 +106,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
                  }
                )
 
-      assert result["email"] == @valid_user_params["email"]
+      assert result["email"] === @valid_user_params["email"]
     end
 
     test "a user cannot be registered with invalid data" do
@@ -138,7 +138,7 @@ defmodule PaymentServerWeb.Schemas.UserSchemaTest do
                )
 
       all_users = Accounts.list_users()
-      assert length(all_users) === 0
+      assert Enum.empty?(all_users) === true
     end
 
     test "a user cannot delete another user", %{user: user} do

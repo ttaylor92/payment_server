@@ -12,7 +12,7 @@ defmodule PaymentServer.WalletsTest do
     test "creates a currency with valid data", %{user: user} do
       valid_attrs = WalletFactory.build_param_map(%{user_id: user.id})
       assert {:ok, %Currency{} = currency} = Wallets.create(valid_attrs)
-      assert currency.type == valid_attrs.type
+      assert currency.type === valid_attrs.type
     end
 
     test "returns error changeset with invalid data" do
@@ -27,7 +27,7 @@ defmodule PaymentServer.WalletsTest do
       {:ok, currency} = Wallets.create(currency_attrs)
 
       assert {:ok, %Currency{} = updated_currency} = Wallets.update(currency, %{type: "EUR"})
-      assert updated_currency.type == "EUR"
+      assert updated_currency.type === "EUR"
     end
 
     test "returns error changeset with invalid data", %{user: user} do
@@ -54,7 +54,7 @@ defmodule PaymentServer.WalletsTest do
       {:ok, currency} = Wallets.create(currency_attrs)
 
       {:ok, found_currency} = Wallets.get_by_id(currency.id)
-      assert found_currency.type == currency.type
+      assert found_currency.type === currency.type
     end
 
     test "returns error if the currency does not exist" do
@@ -71,14 +71,14 @@ defmodule PaymentServer.WalletsTest do
       {:ok, currency2} = Wallets.create(currency2_attrs)
 
       currencies = Wallets.get_all(%{user_id: user.id})
-      assert length(currencies) == 2
-      assert Enum.any?(currencies, fn currency -> currency.type == currency1.type end)
-      assert Enum.any?(currencies, fn currency -> currency.type == currency2.type end)
+      assert length(currencies) === 2
+      assert Enum.any?(currencies, fn currency -> currency.type === currency1.type end)
+      assert Enum.any?(currencies, fn currency -> currency.type === currency2.type end)
     end
   end
 
   defp setup_account(context) do
-    {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+    {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
     Map.put(context, :user, user)
   end
 end

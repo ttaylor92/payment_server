@@ -66,12 +66,12 @@ defmodule PaymentServerWeb.Schema.Queries.WalletQueryTest do
     end
 
     test "a user can get all of his wallets", %{user: user} do
-      {:ok, wallet} =
-        WalletFactory.build_param_map(%{user_id: user.id})
+      {:ok, wallet} = %{user_id: user.id}
+        |> WalletFactory.build_param_map()
         |> Wallets.create()
 
-      {:ok, wallet2} =
-        WalletFactory.build_param_map(%{user_id: user.id, type: "RAN"})
+      {:ok, wallet2} = %{user_id: user.id, type: "RAN"}
+        |> WalletFactory.build_param_map()
         |> Wallets.create()
 
       assert {:ok, %{data: %{"wallets" => data}}} =
@@ -102,7 +102,7 @@ defmodule PaymentServerWeb.Schema.Queries.WalletQueryTest do
 
       expected_result = %{"value" => "AED", "label" => "United Arab Emirates Dirham"}
 
-      assert List.first(data) == expected_result
+      assert List.first(data) === expected_result
     end
 
     test "a user cannot get the list of accepted currencies when unauthenticated" do
@@ -119,7 +119,7 @@ defmodule PaymentServerWeb.Schema.Queries.WalletQueryTest do
   end
 
   defp setup_account(context) do
-    {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+    {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
     Map.put(context, :user, user)
   end
 end

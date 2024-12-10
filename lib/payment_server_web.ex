@@ -82,10 +82,10 @@ defmodule PaymentServerWeb do
   defp html_helpers do
     quote do
       # HTML escaping functionality
-      import Phoenix.HTML
+      # import Phoenix.HTML
       # Core UI components and translation
-      import PaymentServerWeb.CoreComponents
-      import PaymentServerWeb.Gettext
+      # import PaymentServerWeb.CoreComponents
+      # import PaymentServerWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

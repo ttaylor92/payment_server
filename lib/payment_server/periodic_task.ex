@@ -29,11 +29,11 @@ defmodule PaymentServer.PeriodicTask do
     {:noreply, state}
   end
 
-  defp schedule_work() do
+  defp schedule_work do
     Process.send_after(self(), :work, @interval)
   end
 
-  defp check_all_currencies_subscriptions() do
+  defp check_all_currencies_subscriptions do
     Task.start(fn -> WalletService.get_all_currency_updates() end)
   end
 

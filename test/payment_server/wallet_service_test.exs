@@ -8,7 +8,7 @@ defmodule PaymentServer.WalletServiceTest do
       result = WalletService.fetch_accepted_currencies()
       expected_result = %{value: "AED", label: "United Arab Emirates Dirham"}
 
-      assert List.first(result) == expected_result
+      assert List.first(result) === expected_result
     end
   end
 end

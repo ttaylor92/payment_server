@@ -45,7 +45,7 @@ defmodule PaymentServer.WalletService do
         fetch_and_create_exchange_rate(currency_to, currency_from, display_error?, api_client)
 
       rate ->
-        if not is_time_beyond_limit?(rate.inserted_at, 10) do
+        if time_beyond_limit?(rate.inserted_at, 10) === false do
           if display_error? do
             {:ok, rate}
           else
@@ -79,7 +79,7 @@ defmodule PaymentServer.WalletService do
   end
 
   defp fetch_exchange_and_returned_converted_value(wallet, currency_to, api_client) do
-    if wallet.type == currency_to do
+    if wallet.type === currency_to do
       wallet.amount
     else
       case get_exchange_rate(currency_to, wallet.type, true, api_client) do
@@ -90,7 +90,7 @@ defmodule PaymentServer.WalletService do
     end
   end
 
-  defp is_time_beyond_limit?(inserted_time, time) do
+  defp time_beyond_limit?(inserted_time, time) do
     DateTime.diff(DateTime.utc_now(), inserted_time, :minute) >= time
   end
 
@@ -173,7 +173,7 @@ defmodule PaymentServer.WalletService do
 
     cached_accepted_currencies = PeriodicTask.get_state()
 
-    if length(cached_accepted_currencies.rates) === 0 or is_time_beyond_limit?(cached_accepted_currencies.updated_at, 2) do
+    if Enum.empty?(cached_accepted_currencies.rates) or time_beyond_limit?(cached_accepted_currencies.updated_at, 2) do
       fetch_exchange_rate_and_publish(accepted_currencies)
     else
       publish_db_list_of_currencies(cached_accepted_currencies.rates)

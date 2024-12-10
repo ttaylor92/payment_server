@@ -79,12 +79,12 @@ alias PaymentServer.Authentication
                subscriptionId: ^subscription_id,
                result: %{
                  data: %{
-                   "allCurrenciesUpdate" => allCurrenciesUpdateData
+                   "allCurrenciesUpdate" => all_currencies_update_data
                  }
                }
              } = data
 
-      assert length(allCurrenciesUpdateData) > 0
+      assert length(all_currencies_update_data) > 0
     end
   end
 
@@ -110,14 +110,19 @@ alias PaymentServer.Authentication
       token: token
     } do
       # Setup users and wallets
-      {:ok, wallet} = WalletFactory.build_param_map(%{user_id: user.id}) |> Wallets.create()
+      {:ok, wallet} = %{user_id: user.id}
+        |> WalletFactory.build_param_map()
+        |> Wallets.create()
+
       {:ok, _wallet} = Wallets.update(wallet, %{amount: 100})
 
-      {:ok, receiver} =
-        UserFactory.build_param_map(%{email: "mail@exam.com"}) |> Accounts.create_user()
+      {:ok, receiver} = %{email: "mail@exam.com"}
+        |> UserFactory.build_param_map()
+        |> Accounts.create_user()
 
-      {:ok, _receiver_wallet} =
-        WalletFactory.build_param_map(%{user_id: receiver.id}) |> Wallets.create()
+      {:ok, _receiver_wallet} = %{user_id: receiver.id}
+        |> WalletFactory.build_param_map()
+        |> Wallets.create()
 
       {:ok, updated_user} = Accounts.get_user(user.id, preload: :curriences)
 
@@ -164,7 +169,7 @@ alias PaymentServer.Authentication
   end
 
   defp setup_account(context) do
-    {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+    {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
     Map.put(context, :user, user)
   end
 

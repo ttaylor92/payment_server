@@ -1,4 +1,4 @@
-defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
+defmodule PaymentServerWeb.Schemas.WalletMutationTest do
   use PaymentServer.DataCase
 
   alias PaymentServerWeb.Schema
@@ -60,8 +60,8 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
 
   describe "@walletDelete: " do
     test "a user can delete his wallet", %{user: user} do
-      {:ok, wallet} =
-        WalletFactory.build_param_map(%{user_id: user.id})
+      {:ok, wallet} = %{user_id: user.id}
+        |> WalletFactory.build_param_map()
         |> Wallets.create()
 
       {:ok, updated_user} = Accounts.get_user(user.id, preload: :curriences)
@@ -86,15 +86,16 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
 
   describe "@processTransferRequest: " do
     test "a user can transfer an amount to another user of the same currency", %{user: user} do
-      {:ok, wallet} =
-        WalletFactory.build_param_map(%{user_id: user.id})
+      {:ok, wallet} = %{user_id: user.id}
+        |> WalletFactory.build_param_map()
         |> Wallets.create()
 
-      {:ok, receiver} =
-        UserFactory.build_param_map(%{email: "mail@exam.com"}) |> Accounts.create_user()
+      {:ok, receiver} = %{email: "mail@exam.com"}
+        |> UserFactory.build_param_map()
+        |> Accounts.create_user()
 
-      {:ok, receiver_wallet} =
-        WalletFactory.build_param_map(%{user_id: receiver.id})
+      {:ok, receiver_wallet} = %{user_id: receiver.id}
+        |> WalletFactory.build_param_map()
         |> Wallets.create()
 
       {:ok, updated_user_with_wallet} = Accounts.get_user(user.id, preload: :curriences)
@@ -139,7 +140,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
                )
 
       {:ok, updated_receiver_wallet} = Wallets.get_by_id(receiver_wallet.id)
-      assert updated_receiver_wallet.amount === 10050.00
+      assert updated_receiver_wallet.amount === 10_050.00
 
       {:ok, updated_wallet} = Wallets.get_by_id(wallet.id)
       assert updated_wallet.amount === 50.00
@@ -147,15 +148,16 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
 
     test "a user cannot transfer an amount to another user if they dont have the same currency",
          %{user: user} do
-      {:ok, receiver} =
-        UserFactory.build_param_map(%{email: "mail@exam.com"}) |> Accounts.create_user()
+      {:ok, receiver} = %{email: "mail@exam.com"}
+        |> UserFactory.build_param_map()
+        |> Accounts.create_user()
 
-      {:ok, _receiver_wallet} =
-        WalletFactory.build_param_map(%{user_id: receiver.id, type: "AUD"})
+      {:ok, _receiver_wallet} = %{user_id: receiver.id, type: "AUD"}
+        |> WalletFactory.build_param_map()
         |> Wallets.create()
 
-      {:ok, _wallet} =
-        WalletFactory.build_param_map(%{user_id: user.id})
+      {:ok, _wallet} = %{user_id: user.id}
+        |> WalletFactory.build_param_map()
         |> Wallets.create()
 
       {:ok, updated_user_with_wallet} = Accounts.get_user(user.id)
@@ -198,7 +200,7 @@ defmodule PaymentServerWeb.Schemas.WalletSchemaTest do
   end
 
   defp setup_account(context) do
-    {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+    {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
     Map.put(context, :user, user)
   end
 end

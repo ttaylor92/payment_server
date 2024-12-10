@@ -2,8 +2,8 @@ defmodule PaymentServerWeb.Schemas.Queries.UserQueryTest do
   use PaymentServer.DataCase
 
   alias PaymentServerWeb.Schema
-  alias PaymentServer.SchemasPg.{Accounts}
-  alias PaymentServer.Support.{UserFactory}
+  alias PaymentServer.SchemasPg.Accounts
+  alias PaymentServer.Support.UserFactory
 
   setup [:setup_account]
 
@@ -68,8 +68,7 @@ defmodule PaymentServerWeb.Schemas.Queries.UserQueryTest do
       """
 
       {:ok, user2} =
-        %{UserFactory.build_param_map() | email: "random@email.com"}
-        |> Accounts.create_user()
+        Accounts.create_user(%{UserFactory.build_param_map() | email: "random@email.com"})
 
       assert {:ok, %{data: %{"user" => data}}} =
                Absinthe.run(query, Schema,
@@ -92,7 +91,7 @@ defmodule PaymentServerWeb.Schemas.Queries.UserQueryTest do
   end
 
   defp setup_account(context) do
-    {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
+    {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
     Map.put(context, :user, user)
   end
 end

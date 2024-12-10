@@ -68,8 +68,7 @@ defmodule PaymentServer.SchemasPg.Accounts.User do
   end
 
   def update_changeset(%__MODULE__{} = changeset, params) do
-    changeset
-    |> changeset(params)
+    changeset(changeset, params)
   end
 
   def query_by_id(id) do

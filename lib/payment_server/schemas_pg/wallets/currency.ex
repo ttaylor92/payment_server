@@ -33,7 +33,6 @@ defmodule PaymentServer.SchemasPg.Wallets.Currency do
   end
 
   def update_changeset(%__MODULE__{} = changeset, attrs) do
-    changeset
-    |> cast(attrs, [:amount, :type])
+    cast(changeset, attrs, [:amount, :type])
   end
 end
