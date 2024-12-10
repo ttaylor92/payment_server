@@ -27,4 +27,10 @@ defmodule PaymentServerWeb.Types.UserType do
     field :password_confirmation, :string
     field :default_currency, :string
   end
+
+  input_object :users_query_input do
+    field :first, :integer
+    field :after, :integer
+    field :before, :integer
+  end
 end

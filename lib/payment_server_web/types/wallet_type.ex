@@ -6,7 +6,6 @@ defmodule PaymentServerWeb.Types.WalletType do
     field :type, :string
     field :amount, :float
     field :user, :user_type
-    # field :transaction, list_of(:history_type)
   end
 
   object :currency_type do
@@ -44,5 +43,11 @@ defmodule PaymentServerWeb.Types.WalletType do
 
   input_object :wallet_input_type do
     field :type, non_null(:string)
+  end
+
+  input_object :wallets_query_input do
+    field :first, :integer
+    field :after, :integer
+    field :before, :integer
   end
 end

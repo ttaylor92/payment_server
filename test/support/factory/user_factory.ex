@@ -1,13 +1,13 @@
 defmodule PaymentServer.Support.UserFactory do
   @behaviour FactoryEx
 
-  def schema, do: PaymentServer.Accounts.User
+  def schema, do: PaymentServer.SchemasPg.Accounts.User
 
   def repo, do: PaymentServer.Repo
 
   def build(params \\ %{}) do
     default = %{
-      email: "user@example.com",
+      email: "user#{Enum.random(0..100_000)}@example.com",
       password: "secret",
       password_confirmation: "secret",
       first_name: "first",

@@ -1,14 +1,14 @@
 defmodule PaymentServer.Support.WalletFactory do
   @behaviour FactoryEx
 
-  def schema, do: PaymentServer.Wallets.Currency
+  def schema, do: PaymentServer.SchemasPg.Wallets.Currency
 
   def repo, do: PaymentServer.Repo
 
   def build(params \\ %{}) do
     default = %{
       type: "USD",
-      amount: 10000.00
+      amount: 10_000.00
     }
 
     Map.merge(default, params)

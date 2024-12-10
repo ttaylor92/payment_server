@@ -1,27 +1,22 @@
-defmodule PaymentServer.WalletTest do
-  use PaymentServer.DataCase, async: true
+defmodule PaymentServer.WalletsTest do
+  use PaymentServer.DataCase
 
-  alias PaymentServer.Wallets
-  alias PaymentServer.Accounts
-  alias PaymentServer.Wallets.Currency
+  alias PaymentServer.SchemasPg.Wallets
+  alias PaymentServer.SchemasPg.Accounts
+  alias PaymentServer.SchemasPg.Wallets.Currency
   alias PaymentServer.Support.{WalletFactory, UserFactory}
 
   setup [:setup_account]
-
-  defp setup_account(context) do
-    {:ok, user} = UserFactory.build_param_map() |> Accounts.create_user()
-    Map.put(context, :user, user)
-  end
 
   describe "create/1" do
     test "creates a currency with valid data", %{user: user} do
       valid_attrs = WalletFactory.build_param_map(%{user_id: user.id})
       assert {:ok, %Currency{} = currency} = Wallets.create(valid_attrs)
-      assert currency.type == valid_attrs.type
+      assert currency.type === valid_attrs.type
     end
 
     test "returns error changeset with invalid data" do
-      invalid_attrs = %{"type" => nil}
+      invalid_attrs = %{type: nil}
       assert {:error, %Ecto.Changeset{}} = Wallets.create(invalid_attrs)
     end
   end
@@ -32,7 +27,7 @@ defmodule PaymentServer.WalletTest do
       {:ok, currency} = Wallets.create(currency_attrs)
 
       assert {:ok, %Currency{} = updated_currency} = Wallets.update(currency, %{type: "EUR"})
-      assert updated_currency.type == "EUR"
+      assert updated_currency.type === "EUR"
     end
 
     test "returns error changeset with invalid data", %{user: user} do
@@ -49,7 +44,7 @@ defmodule PaymentServer.WalletTest do
       {:ok, currency} = Wallets.create(currency_attrs)
 
       assert {:ok, %Currency{}} = Wallets.delete(currency)
-      assert Wallets.get_by_id(currency.id) == nil
+      assert {:error, %ErrorMessage{code: :not_found, message: "no records found", details: _}} = Wallets.get_by_id(currency.id)
     end
   end
 
@@ -58,12 +53,12 @@ defmodule PaymentServer.WalletTest do
       currency_attrs = WalletFactory.build_param_map(%{user_id: user.id})
       {:ok, currency} = Wallets.create(currency_attrs)
 
-      found_currency = Wallets.get_by_id(currency.id)
-      assert found_currency.type == currency.type
+      {:ok, found_currency} = Wallets.get_by_id(currency.id)
+      assert found_currency.type === currency.type
     end
 
-    test "returns nil if the currency does not exist" do
-      assert Wallets.get_by_id(-1) == nil
+    test "returns error if the currency does not exist" do
+      assert {:error, %ErrorMessage{code: :not_found, message: "no records found", details: _}} = Wallets.get_by_id(-1)
     end
   end
 
@@ -75,10 +70,15 @@ defmodule PaymentServer.WalletTest do
       currency2_attrs = WalletFactory.build_param_map(%{user_id: user.id, type: "EUR"})
       {:ok, currency2} = Wallets.create(currency2_attrs)
 
-      currencies = Wallets.get_all(user.id)
-      assert length(currencies) == 2
-      assert Enum.any?(currencies, fn currency -> currency.type == currency1.type end)
-      assert Enum.any?(currencies, fn currency -> currency.type == currency2.type end)
+      currencies = Wallets.get_all(%{user_id: user.id})
+      assert length(currencies) === 2
+      assert Enum.any?(currencies, fn currency -> currency.type === currency1.type end)
+      assert Enum.any?(currencies, fn currency -> currency.type === currency2.type end)
     end
+  end
+
+  defp setup_account(context) do
+    {:ok, user} = Accounts.create_user(UserFactory.build_param_map())
+    Map.put(context, :user, user)
   end
 end

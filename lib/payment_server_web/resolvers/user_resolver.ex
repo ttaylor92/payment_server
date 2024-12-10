@@ -1,9 +1,10 @@
 defmodule PaymentServerWeb.Resolvers.UserResolver do
-  alias PaymentServer.Accounts
+  alias PaymentServer.Authentication
+  alias PaymentServer.SchemasPg.Accounts
   alias Utils.AuthToken
 
-  def users(_, _, %{context: %{current_user: _current_user}}) do
-    {:ok, Accounts.list_users()}
+  def users(args, _, %{context: %{current_user: _current_user}}) do
+    {:ok, Accounts.list_users(args, preload: :curriences)}
   end
 
   def users(_, _, _) do
@@ -12,8 +13,7 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   def create_user(_, %{input: input}, _) do
     case Accounts.create_user(input) do
-      {:ok, account} ->
-        {:ok, account}
+      {:ok, account} -> {:ok, account}
 
       {:error, changeset} ->
         {:error,
@@ -23,8 +23,8 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   def get_user(_, %{id: id}, %{context: %{current_user: _current_user}}) do
     case Accounts.get_user(id) do
-      nil -> {:error, message: "User not found!"}
-      user -> {:ok, user}
+      {:error, _} -> {:error, message: "User not found!"}
+      {:ok, user} -> {:ok, user}
     end
   end
 
@@ -37,7 +37,7 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
   end
 
   def sign_in(_, %{email: email, password: password}, _) do
-    case Accounts.authenticate(email, password) do
+    case Authentication.authenticate_user(email, password) do
       {:ok, %Accounts.User{} = user} ->
         {:ok, %{token: AuthToken.create(user), user: %{email: user.email}}}
 
@@ -48,8 +48,7 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   def delete_user(_, _, %{context: %{current_user: current_user}}) do
     case Accounts.delete_user(current_user) do
-      {:ok, _account} ->
-        {:ok, %{message: "Account deleted."}}
+      {:ok, _account} -> {:ok, %{message: "Account deleted."}}
 
       {:error, changeset} ->
         {:error,
@@ -63,8 +62,7 @@ defmodule PaymentServerWeb.Resolvers.UserResolver do
 
   def update_user(_, %{input: input}, %{context: %{current_user: current_user}}) do
     case Accounts.update_user(current_user, input) do
-      {:ok, result} ->
-        {:ok, result}
+      {:ok, result} -> {:ok, result}
 
       {:error, changeset} ->
         {:error,

@@ -1,7 +1,7 @@
-defmodule PaymentServer.ExternalApiClientTest do
-  use PaymentServer.DataCase, async: true
+defmodule PaymentServer.ExternalApiServiceTest do
+  use PaymentServer.DataCase
 
-  alias PaymentServer.ExternalApiClient
+  alias PaymentServer.ExternalApiService
 
   describe "transform_keys/1" do
     test "returns map with formatted keys as atoms in snake case" do
@@ -12,8 +12,8 @@ defmodule PaymentServer.ExternalApiClientTest do
         }
       }
 
-      parsed_map = ExternalApiClient.transform_keys(map_example)
-      assert parsed_map.from_currency_code === "USD"
+      parsed_map = ExternalApiService.transform_keys(map_example)
+      assert parsed_map["from_currency_code"] === "USD"
     end
   end
 end

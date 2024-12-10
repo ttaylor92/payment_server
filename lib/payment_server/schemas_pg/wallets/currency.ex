@@ -1,17 +1,23 @@
-defmodule PaymentServer.Wallets.Currency do
+defmodule PaymentServer.SchemasPg.Wallets.Currency do
   use Ecto.Schema
   import Ecto.Changeset
+  alias PaymentServer.SchemasPg.Accounts.User
+
+  @type t :: %__MODULE__{
+    type: String.t(),
+    amount: integer(),
+    user: User.t()
+  }
 
   schema "currencies" do
     field :type, :string
     field :amount, :float
-    belongs_to :user, PaymentServer.Accounts.User
-    has_many :transaction, PaymentServer.WalletHistory.TransactionHistory
+    belongs_to :user, User
 
     timestamps(type: :utc_datetime)
   end
 
-  @available_params [:type, :user_id]
+  @available_params if Mix.env() === :test, do: [:type, :user_id, :amount], else: [:type, :user_id]
   @required_params [:type, :user_id]
 
   def create_changeset(params) do
@@ -27,7 +33,6 @@ defmodule PaymentServer.Wallets.Currency do
   end
 
   def update_changeset(%__MODULE__{} = changeset, attrs) do
-    changeset
-    |> cast(attrs, [:amount, :type])
+    cast(changeset, attrs, [:amount, :type])
   end
 end
