@@ -1,11 +1,10 @@
 defmodule PaymentServerWeb.Subscriptions.WalletSubscriptionsTest do
   use PaymentServerWeb.SubscriptionCase
-alias PaymentServer.Authentication
   use PaymentServer.DataCase
 
+  alias PaymentServer.Authentication
   alias PaymentServer.Support.{WalletFactory, UserFactory}
   alias PaymentServer.SchemasPg.{Accounts, Wallets}
-  alias Utils.AuthToken
 
   setup [:setup_account, :setup_token]
 
@@ -174,9 +173,8 @@ alias PaymentServer.Authentication
   end
 
   defp setup_token(context) do
-    {:ok, user} = Authentication.authenticate_user(context.user.email, context.user.password)
-    token = AuthToken.create(user)
-    Map.put(context, :token, token)
+    {:ok, token_data} = Authentication.authenticate_user(context.user.email, context.user.password)
+    Map.put(context, :token, token_data.token)
   end
 
   defp setup_user_socket(token) do

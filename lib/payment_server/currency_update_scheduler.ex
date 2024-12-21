@@ -1,4 +1,4 @@
-defmodule PaymentServer.PeriodicTask do
+defmodule PaymentServer.CurrencyUpdateScheduler do
   use GenServer
   require Logger
 
@@ -24,7 +24,7 @@ defmodule PaymentServer.PeriodicTask do
 
   @impl true
   def handle_info(:work, state) do
-    check_all_currencies_subscriptions()
+    check_all_currencies_subscriptions(state)
     schedule_work()
     {:noreply, state}
   end
@@ -33,8 +33,8 @@ defmodule PaymentServer.PeriodicTask do
     Process.send_after(self(), :work, @interval)
   end
 
-  defp check_all_currencies_subscriptions do
-    Task.start(fn -> WalletService.get_all_currency_updates() end)
+  defp check_all_currencies_subscriptions(state) do
+    WalletService.get_all_currency_updates(state)
   end
 
   @impl true
@@ -51,14 +51,7 @@ defmodule PaymentServer.PeriodicTask do
     GenServer.call(name, :get_state)
   end
 
-  def update_state(_, name \\ @default_name)
-  def update_state(rates, name) when is_list(rates) do
-    timestamp = DateTime.utc_now()
-    new_state = %{rates: rates, updated_at: timestamp}
+  def update_state(new_state, name \\ @default_name) do
     GenServer.cast(name, {:update_state, new_state})
-  end
-
-  def update_state(_, _name) do
-    {:noreplay, %{}}
   end
 end

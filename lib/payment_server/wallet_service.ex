@@ -1,8 +1,8 @@
 defmodule PaymentServer.WalletService do
-  alias PaymentServer.PeriodicTask
+  alias PaymentServer.CurrencyUpdateScheduler
   alias PaymentServer.SchemasPg.Wallets
   alias PaymentServer.SchemasPg.Accounts
-  alias PaymentServer.ExternalApiService
+  alias PaymentServer.CurrencyExchangeApi
   alias NimbleCSV.RFC4180, as: CSV
 
   @doc """
@@ -37,7 +37,7 @@ defmodule PaymentServer.WalletService do
   @doc """
   Fetches the exchange rate between two currencies.
   """
-  def get_exchange_rate(currency_to, currency_from, display_error?, api_client \\ ExternalApiService)
+  def get_exchange_rate(currency_to, currency_from, display_error?, api_client \\ CurrencyExchangeApi)
 
   def get_exchange_rate(currency_to, currency_from, display_error?, api_client) do
     case find_rate_by_currency(currency_to) do
@@ -95,7 +95,7 @@ defmodule PaymentServer.WalletService do
   end
 
   defp find_rate_by_currency(currency_to) do
-    cache = PeriodicTask.get_state()
+    cache = CurrencyUpdateScheduler.get_state()
     Enum.find(cache.rates, nil, fn rate -> rate.currency_to === currency_to end)
   end
 
@@ -104,7 +104,7 @@ defmodule PaymentServer.WalletService do
   """
   def get_total_worth(
         user_id,
-        api_client \\ ExternalApiService
+        api_client \\ CurrencyExchangeApi
       ) do
     case get_user(user_id) do
       {:ok, %PaymentServer.SchemasPg.Accounts.User{} = user} ->
@@ -148,7 +148,7 @@ defmodule PaymentServer.WalletService do
   def get_currency_update(
         currency_to,
         default_currency \\ "USD",
-        api_client \\ ExternalApiService
+        api_client \\ CurrencyExchangeApi
       ) do
     topic = "currency:#{currency_to}"
 
@@ -168,10 +168,8 @@ defmodule PaymentServer.WalletService do
   @doc """
   Publishes updates for all currencies.
   """
-  def get_all_currency_updates(file_reader \\ &File.read!/1, csv_parser \\ &CSV.parse_string/1) do
+  def get_all_currency_updates(cached_accepted_currencies, file_reader \\ &File.read!/1, csv_parser \\ &CSV.parse_string/1) do
     accepted_currencies = fetch_accepted_currencies(file_reader, csv_parser)
-
-    cached_accepted_currencies = PeriodicTask.get_state()
 
     if Enum.empty?(cached_accepted_currencies.rates) or time_beyond_limit?(cached_accepted_currencies.updated_at, 2) do
       fetch_exchange_rate_and_publish(accepted_currencies)
@@ -183,7 +181,7 @@ defmodule PaymentServer.WalletService do
   defp fetch_exchange_rate_and_publish(
     accepted_currencies,
     default_currency \\ "USD",
-    api_client \\ ExternalApiService
+    api_client \\ CurrencyExchangeApi
   ) do
     results = accepted_currencies
       |> Task.async_stream(
@@ -221,7 +219,7 @@ defmodule PaymentServer.WalletService do
       end)
     end)
 
-    PeriodicTask.update_state(results)
+    update_cache(results)
   end
 
   defp publish_db_list_of_currencies(db_list_of_currencies) do
@@ -246,6 +244,12 @@ defmodule PaymentServer.WalletService do
         )
       end)
     end)
+  end
+
+  defp update_cache(results) do
+    timestamp = DateTime.utc_now()
+    %{rates: results, updated_at: timestamp}
+    # CurrencyUpdateScheduler.update_state(new_state)
   end
 
   def find_wallet(user, id) when is_number(id) do

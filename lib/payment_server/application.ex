@@ -19,7 +19,7 @@ defmodule PaymentServer.Application do
       # Start to serve requests, typically the last entry
       PaymentServerWeb.Endpoint,
       {Absinthe.Subscription, PaymentServerWeb.Endpoint},
-      {PaymentServer.PeriodicTask, []}
+      {PaymentServer.CurrencyUpdateScheduler, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

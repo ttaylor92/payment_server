@@ -17,7 +17,7 @@ defmodule PaymentServer.SchemasPg.Wallets.Currency do
     timestamps(type: :utc_datetime)
   end
 
-  @available_params if Mix.env() === :test, do: [:type, :user_id, :amount], else: [:type, :user_id]
+  @available_params [:type, :user_id, :amount]
   @required_params [:type, :user_id]
 
   def create_changeset(params) do
