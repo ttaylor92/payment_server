@@ -10,8 +10,8 @@ defmodule PaymentServer.AuthenticationTest do
       {:ok, user} =
         Accounts.create_user(UserFactory.build_param_map())
 
-      {:ok, authenticated_user} = Authentication.authenticate_user(user.email, "secret")
-      assert authenticated_user.email === user.email
+      assert {:ok, authenticated_user} = Authentication.authenticate_user(user.email, "secret")
+      assert authenticated_user.user.email === user.email
     end
 
     test "returns an error tuple with incorrect credentials" do

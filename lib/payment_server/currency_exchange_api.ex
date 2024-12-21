@@ -1,4 +1,4 @@
-defmodule PaymentServer.ExternalApiService do
+defmodule PaymentServer.CurrencyExchangeApi do
   use HTTPoison.Base
 
   @moduledoc """
@@ -22,7 +22,7 @@ defmodule PaymentServer.ExternalApiService do
 
   ## Examples
 
-      iex> MyApp.ExternalApiService.get_currency("AUD")
+      iex> MyApp.CurrencyExchangeApi.get_currency("AUD")
       {:ok, %{
         "time_zone" => "UTC",
         "from_currency_code" => "USD",
@@ -35,7 +35,7 @@ defmodule PaymentServer.ExternalApiService do
         "ask_price" => "3.33"
       }}
 
-      iex> MyApp.ExternalApiService.get_currency("EUR", "AUD")
+      iex> MyApp.CurrencyExchangeApi.get_currency("EUR", "AUD")
       {:ok, %{
         "time_zone" => "UTC",
         "from_currency_code" => "AUD",

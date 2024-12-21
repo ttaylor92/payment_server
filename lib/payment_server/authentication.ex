@@ -1,5 +1,6 @@
 defmodule PaymentServer.Authentication do
   alias PaymentServer.SchemasPg.Accounts
+  alias Utils.AuthToken
 
   @doc """
   Attempts to authenticate a user based on the provided email and password.
@@ -11,7 +12,8 @@ defmodule PaymentServer.Authentication do
 
   ## Return Value:
 
-  * The function returns a `User` struct if the email and password combination is valid, otherwise it returns `nil`.
+  * Returns `{:ok, %{token: token, user: user}}` if the email and password combination is valid, where `token` is the generated authentication token and `user` is a map containing user details.
+  * Returns `{:error, reason}` if the authentication fails, where `reason` is a string indicating the failure reason.
 
   ## Errors:
 
@@ -22,19 +24,19 @@ defmodule PaymentServer.Authentication do
   ## Example Usage:
 
   ```elixir
-  # Assuming user_context is a UserContext module
-  user = user_context.authenticate("john.doe@example.com", "secret_password")
+  user = PaymentServer.Authentication.authenticate_user("john.doe@example.com", "secret_password")
 
-  if user do
-    # User authenticated, proceed with authorization or session creation
-  else
-    # Authentication failed, handle invalid credentials
+  case user do
+    {:ok, %{token: token, user: user_info}} ->
+      # User authenticated, proceed with authorization or session creation
+    {:error, reason} ->
+      # Authentication failed, handle invalid credentials
   end
   """
   def authenticate_user(email, password) do
     with {:ok, account} <- Accounts.get_user_by_email(email) do
       case Argon2.verify_pass(password, account.password_hash) do
-        true -> {:ok, account}
+        true -> {:ok, %{token: AuthToken.create(account), user: %{email: account.email}}}
         false -> {:error, "No Matching account found."}
       end
     end
