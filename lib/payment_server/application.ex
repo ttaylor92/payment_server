@@ -19,6 +19,7 @@ defmodule PaymentServer.Application do
       # Start to serve requests, typically the last entry
       PaymentServerWeb.Endpoint,
       {Absinthe.Subscription, PaymentServerWeb.Endpoint},
+      {Task.Supervisor, name: PaymentServer.TaskSupervisor},
       {PaymentServer.CurrencyUpdateScheduler, []}
     ]
 

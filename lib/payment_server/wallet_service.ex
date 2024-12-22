@@ -174,7 +174,7 @@ defmodule PaymentServer.WalletService do
     if Enum.empty?(cached_accepted_currencies.rates) or time_beyond_limit?(cached_accepted_currencies.updated_at, 2) do
       fetch_exchange_rate_and_publish(accepted_currencies)
     else
-      publish_db_list_of_currencies(cached_accepted_currencies.rates)
+      publish_db_list_of_currencies(cached_accepted_currencies)
     end
   end
 
@@ -223,7 +223,7 @@ defmodule PaymentServer.WalletService do
   end
 
   defp publish_db_list_of_currencies(db_list_of_currencies) do
-    results = Enum.map(db_list_of_currencies, fn currency ->
+    results = Enum.map(db_list_of_currencies.rates, fn currency ->
       %{currency_from: currency.currency_from, currency_to: currency.currency_to, rate: currency.rate}
     end)
 
@@ -244,12 +244,14 @@ defmodule PaymentServer.WalletService do
         )
       end)
     end)
+
+    # Return map of data
+    db_list_of_currencies
   end
 
   defp update_cache(results) do
     timestamp = DateTime.utc_now()
     %{rates: results, updated_at: timestamp}
-    # CurrencyUpdateScheduler.update_state(new_state)
   end
 
   def find_wallet(user, id) when is_number(id) do
