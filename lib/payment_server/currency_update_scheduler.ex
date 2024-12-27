@@ -9,18 +9,17 @@ defmodule PaymentServer.CurrencyUpdateScheduler do
 
   def start_link(opts \\ []) do
     opts = Keyword.put_new(opts, :name, @default_name)
-    initial_state = %{
-      rates: [],
-      updated_at: nil,
-      ref: nil
-    }
-    GenServer.start_link(__MODULE__, initial_state, opts)
+    GenServer.start_link(__MODULE__, %{}, opts)
   end
 
   @impl true
-  def init(state) do
+  def init(_state) do
+    initial_state = WalletService.get_all_currency_updates(%{
+      rates: [],
+      updated_at: nil
+    })
     schedule_work()
-    {:ok, state}
+    {:ok, Map.put(initial_state, :ref, nil)}
   end
 
   defp schedule_work do

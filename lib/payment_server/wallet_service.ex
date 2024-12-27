@@ -5,12 +5,13 @@ defmodule PaymentServer.WalletService do
   alias PaymentServer.CurrencyExchangeApi
   alias NimbleCSV.RFC4180, as: CSV
 
+  @priv_dir :code.priv_dir(:payment_server)
+
   @doc """
   Fetches the accepted currencies from the CSV file.
   """
   def fetch_accepted_currencies(file_reader \\ &File.read!/1, csv_parser \\ &CSV.parse_string/1) do
-    root_dir = Mix.Project.app_path()
-    file_path = Path.join([root_dir, "priv", "data", "physical_currency_list.csv"])
+    file_path = Path.join([@priv_dir, "data", "physical_currency_list.csv"])
 
     file_content = file_reader.(file_path)
 
@@ -37,23 +38,13 @@ defmodule PaymentServer.WalletService do
   @doc """
   Fetches the exchange rate between two currencies.
   """
-  def get_exchange_rate(currency_to, currency_from, display_error?, api_client \\ CurrencyExchangeApi)
-
-  def get_exchange_rate(currency_to, currency_from, display_error?, api_client) do
+  def get_exchange_rate(currency_to, currency_from) do
     case find_rate_by_currency(currency_to) do
       nil ->
-        fetch_and_create_exchange_rate(currency_to, currency_from, display_error?, api_client)
+        {:ok, %{currency_from: currency_from, currency_to: currency_to, rate: 0}}
 
       rate ->
-        if time_beyond_limit?(rate.inserted_at, 10) === false do
-          if display_error? do
-            {:ok, rate}
-          else
-            %{currency_to: currency_to, currency_from: currency_from, rate: rate.value}
-          end
-        else
-          fetch_and_create_exchange_rate(currency_to, currency_from, display_error?, api_client)
-        end
+        {:ok, %{currency_to: currency_to, currency_from: currency_from, rate: rate.value}}
     end
   end
 
@@ -78,14 +69,13 @@ defmodule PaymentServer.WalletService do
     end
   end
 
-  defp fetch_exchange_and_returned_converted_value(wallet, currency_to, api_client) do
+  defp fetch_exchange_and_returned_converted_value(wallet, currency_to) do
     if wallet.type === currency_to do
       wallet.amount
     else
-      case get_exchange_rate(currency_to, wallet.type, true, api_client) do
-        {:ok, _rate} when is_nil(wallet.amount) -> 0
-        {:ok, rate} -> wallet.amount * rate
-        {:error, _} -> 0
+      case get_exchange_rate(currency_to, wallet.type) do
+        {:ok, _exchange_rate} when is_nil(wallet.rate) -> 0
+        {:ok, exchange_rate} -> wallet.rate * exchange_rate.rate
       end
     end
   end
@@ -102,15 +92,12 @@ defmodule PaymentServer.WalletService do
   @doc """
   Gets the total worth of a user's wallets in their default currency.
   """
-  def get_total_worth(
-        user_id,
-        api_client \\ CurrencyExchangeApi
-      ) do
+  def get_total_worth(user_id) do
     case get_user(user_id) do
       {:ok, %PaymentServer.SchemasPg.Accounts.User{} = user} ->
         result = user.curriences
         |> Task.async_stream(
-          &fetch_exchange_and_returned_converted_value(&1, user.default_currency, api_client),
+          &fetch_exchange_and_returned_converted_value(&1, user.default_currency),
           max_concurrency: 10,
           timeout: 5000
         )
@@ -139,29 +126,6 @@ defmodule PaymentServer.WalletService do
 
       {:error, _reason} ->
         {:error, message: "User does not exist."}
-    end
-  end
-
-  @doc """
-  Publishes a currency update.
-  """
-  def get_currency_update(
-        currency_to,
-        default_currency \\ "USD",
-        api_client \\ CurrencyExchangeApi
-      ) do
-    topic = "currency:#{currency_to}"
-
-    case get_exchange_rate(currency_to, default_currency, true, api_client) do
-      {:ok, value} ->
-        Absinthe.Subscription.publish(
-          PaymentServerWeb.Endpoint,
-          %{amount: value, default_currency: default_currency},
-          currency_update: topic
-        )
-
-      {:error, _} ->
-        {:error, message: "Unable to fetch update for: #{currency_to}"}
     end
   end
 
@@ -353,16 +317,13 @@ defmodule PaymentServer.WalletService do
   end
 
   def process_wallet_conversion(args, current_user) do
-    with {:ok, exchange_rate} <- get_exchange_rate(args.currency_to, args.currency_from, true),
+    with {:ok, exchange_rate} <- get_exchange_rate(args.currency_to, args.currency_from),
         {:ok, wallet_to_convert} <- find_wallet(current_user, args.currency_from),
         {:ok, updated_wallet} <-
-          convert_wallet(wallet_to_convert, exchange_rate, args.currency_to),
+          convert_wallet(wallet_to_convert, exchange_rate.rate, args.currency_to),
         {:ok, data} <- Wallets.update(wallet_to_convert, updated_wallet, preload: [:user]) do
     {:ok, data}
     else
-    {:error, :exchange_rate_not_found} ->
-      {:error, message: "Failed to retrieve exchange rate."}
-
     {:error, :wallet_not_found} ->
       {:error, message: "Requested wallet to convert does not exist."}
 
